@@ -8,19 +8,24 @@ services:
     container_name: fem_app
     restart: unless-stopped
     working_dir: /var/www
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: 192.168.7.3
+      DB_PORT: 3308
+      DB_DATABASE: fire_extinguisher_db
+      DB_USERNAME: itadmin
+      DB_PASSWORD: Noipalee@09
     volumes:
       - ./:/var/www
     networks:
       - fem_network
-    depends_on:
-      - db
 
   webserver:
     image: nginx:alpine
     container_name: fem_webserver
     restart: unless-stopped
     ports:
-      - "8000:80"
+      - "8019:80"
     volumes:
       - ./:/var/www
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
@@ -28,22 +33,6 @@ services:
       - fem_network
     depends_on:
       - app
-
-  db:
-    image: mysql:8.0
-    container_name: fem_db
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
-      MYSQL_USER: ${DB_USERNAME:-root}
-    ports:
-      - "3306:3306"
-    volumes:
-      - dbdata:/var/lib/mysql
-    networks:
-      - fem_network
       
   scheduler:
     build:
@@ -53,16 +42,18 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     command: php artisan schedule:work
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: 192.168.7.3
+      DB_PORT: 3308
+      DB_DATABASE: fire_extinguisher_db
+      DB_USERNAME: itadmin
+      DB_PASSWORD: Noipalee@09
     volumes:
       - ./:/var/www
     networks:
       - fem_network
-    depends_on:
-      - db
 
 networks:
   fem_network:
     driver: bridge
-
-volumes:
-  dbdata:
