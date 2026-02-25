@@ -10,12 +10,18 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     environment:
+      APP_NAME: "CFARM FEM System"
+      APP_ENV: production
+      APP_KEY: "base64:PYR5HggloJHaQDjmlFUoQ/dWyrS7ovIpOS/vHA3NNQ4="
+      APP_DEBUG: "true"
+      APP_URL: "http://192.168.7.3:8019"
+      LOG_CHANNEL: stderr
       DB_CONNECTION: mysql
       DB_HOST: 192.168.7.3
       DB_PORT: 3308
       DB_DATABASE: fire_extinguisher_db
       DB_USERNAME: itadmin
-      DB_PASSWORD: Noipalee@09
+      DB_PASSWORD: "Noipalee@09"
     networks:
       - fem_network
 
@@ -40,12 +46,18 @@ services:
     working_dir: /var/www
     command: php artisan schedule:work
     environment:
+      APP_NAME: "CFARM FEM System"
+      APP_ENV: production
+      APP_KEY: "base64:PYR5HggloJHaQDjmlFUoQ/dWyrS7ovIpOS/vHA3NNQ4="
+      APP_DEBUG: "true"
+      APP_URL: "http://192.168.7.3:8019"
+      LOG_CHANNEL: stderr
       DB_CONNECTION: mysql
       DB_HOST: 192.168.7.3
       DB_PORT: 3308
       DB_DATABASE: fire_extinguisher_db
       DB_USERNAME: itadmin
-      DB_PASSWORD: Noipalee@09
+      DB_PASSWORD: "Noipalee@09"
     networks:
       - fem_network
     depends_on:
