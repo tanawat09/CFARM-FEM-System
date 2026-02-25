@@ -78,14 +78,7 @@ class InspectionController extends Controller
         // Add robust validation as needed
         
         $results = $request->input('results'); // array of item_code => result
-        $overallResult = 'pass';
-        
-        foreach ($results as $result) {
-            if ($result === 'not_ok') {
-                $overallResult = 'fail';
-                break;
-            }
-        }
+        $overallResult = in_array('not_ok', array_values($results)) ? 'fail' : 'pass';
 
         $inspection = Inspection::create([
             'inspection_no' => 'INS-' . date('Ym') . '-' . str_pad(Inspection::count() + 1, 4, '0', STR_PAD_LEFT),
@@ -99,15 +92,20 @@ class InspectionController extends Controller
             'weather_condition' => $request->weather_condition,
         ]);
 
+        $itemsToInsert = [];
+        $now = now();
         foreach ($results as $code => $result) {
-            InspectionItem::create([
+            $itemsToInsert[] = [
                 'inspection_id' => $inspection->id,
                 'item_code' => $code,
-                'item_name' => collect($request->items)->firstWhere('code', $code)['item'] ?? 'Unknown', // Simplified
-                'category' => 'General', // Simplified
+                'item_name' => collect($request->items)->firstWhere('code', $code)['item'] ?? 'Unknown',
+                'category' => 'General',
                 'result' => $result,
-            ]);
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
+        InspectionItem::insert($itemsToInsert);
         
         $extinguisher = FireExtinguisher::find($request->extinguisher_id);
         $extinguisher->next_inspection_date = now()->addDays(30);
