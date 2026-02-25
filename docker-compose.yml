@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: cfarm-fem-app:v2
     container_name: fem_app
     restart: unless-stopped
     working_dir: /var/www
@@ -22,6 +23,7 @@ services:
     build:
       context: .
       dockerfile: docker/nginx/Dockerfile
+    image: cfarm-fem-webserver:v2
     container_name: fem_webserver
     restart: unless-stopped
     ports:
@@ -32,9 +34,7 @@ services:
       - app
       
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: cfarm-fem-app:v2
     container_name: fem_scheduler
     restart: unless-stopped
     working_dir: /var/www
@@ -48,6 +48,8 @@ services:
       DB_PASSWORD: Noipalee@09
     networks:
       - fem_network
+    depends_on:
+      - app
 
 networks:
   fem_network:
