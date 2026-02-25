@@ -29,6 +29,9 @@ WORKDIR /var/www
 # Copy existing application directory contents
 COPY . /var/www
 
+# Install php dependencies
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
 # IMPORTANT: Ensure storage and cache folders have write permissions
 RUN chown -R www-data:www-data /var/www
 RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
