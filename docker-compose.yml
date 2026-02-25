@@ -19,7 +19,9 @@ services:
       - fem_network
 
   webserver:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
     container_name: fem_webserver
     restart: unless-stopped
     ports:
