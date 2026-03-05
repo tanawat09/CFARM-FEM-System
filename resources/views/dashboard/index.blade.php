@@ -19,7 +19,7 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -34,7 +34,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -49,7 +49,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -64,7 +64,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -83,7 +83,7 @@
 
 <div class="row g-3">
     <!-- Chart Section (Dummpy placeholder for now) -->
-    <div class="col-md-8">
+    <div class="col-12 col-lg-8">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-0 pt-3 pb-0">
                 <h6 class="fw-bold">สถิติการตรวจเช็ค (12 เดือนย้อนหลัง)</h6>
@@ -97,7 +97,7 @@
     </div>
 
     <!-- Recent Inspections -->
-    <div class="col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0">การตรวจล่าสุด</h6>
@@ -132,7 +132,6 @@
             </div>
         </div>
     </div>
-</div>
 </div>
 @endsection
 

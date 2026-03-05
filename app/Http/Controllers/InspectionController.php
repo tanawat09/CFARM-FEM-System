@@ -41,6 +41,16 @@ class InspectionController extends Controller
             return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้อยู่ระหว่างการซ่อมแซม');
         }
 
+        // Check if already inspected this month
+        $alreadyInspected = Inspection::where('extinguisher_id', $extinguisher->id)
+            ->whereMonth('inspected_at', now()->month)
+            ->whereYear('inspected_at', now()->year)
+            ->exists();
+            
+        if ($alreadyInspected) {
+            return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้ได้รับการตรวจเช็คแล้วในเดือนนี้ (1 ถังตรวจได้ 1 ครั้ง/เดือน)');
+        }
+
         return redirect()->route('inspections.create', ['extinguisher_id' => $extinguisher->id]);
     }
 
@@ -52,6 +62,17 @@ class InspectionController extends Controller
         }
 
         $extinguisher = FireExtinguisher::findOrFail($request->extinguisher_id);
+        
+        // Check if already inspected this month
+        $alreadyInspected = Inspection::where('extinguisher_id', $extinguisher->id)
+            ->whereMonth('inspected_at', now()->month)
+            ->whereYear('inspected_at', now()->year)
+            ->exists();
+            
+        if ($alreadyInspected) {
+            return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้ได้รับการตรวจเช็คแล้วในเดือนนี้ (1 ถังตรวจได้ 1 ครั้ง/เดือน)');
+        }
+        
         // This would typically load the standard checklist from DB or config
         $checklist = [
             ['code' => 'CHK-001', 'category' => 'ความดัน', 'item' => 'เข็มความดันอยู่ในเกณฑ์มาตรฐาน (สีเขียว)'],
@@ -76,6 +97,20 @@ class InspectionController extends Controller
     public function store(Request $request)
     {
         // Add robust validation as needed
+        $request->validate([
+            'extinguisher_id' => 'required|exists:fire_extinguishers,id',
+            'results' => 'required|array',
+        ]);
+        
+        // Check if already inspected this month to prevent bypassing via direct POST
+        $alreadyInspected = Inspection::where('extinguisher_id', $request->extinguisher_id)
+            ->whereMonth('inspected_at', now()->month)
+            ->whereYear('inspected_at', now()->year)
+            ->exists();
+            
+        if ($alreadyInspected) {
+            return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้ได้รับการตรวจเช็คแล้วในเดือนนี้ ไม่สามารถบันทึกซ้ำได้');
+        }
         
         $results = $request->input('results'); // array of item_code => result
         $overallResult = in_array('not_ok', array_values($results)) ? 'fail' : 'pass';
