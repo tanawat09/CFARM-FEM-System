@@ -70,13 +70,43 @@
         /* Helpers */
         .color-primary { color: #1e3a5f; }
         .bg-primary-dark { background-color: #1e3a5f; }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                top: 0;
+                bottom: 0;
+                z-index: 1045;
+                transition: left 0.3s ease-in-out;
+            }
+            .sidebar.show {
+                left: 0;
+            }
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1040;
+            }
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
     </style>
     @yield('styles')
 </head>
 <body>
     <div class="d-flex">
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <!-- Sidebar -->
-        <nav class="sidebar flex-shrink-0 p-3" style="width: 250px;">
+        <nav class="sidebar flex-shrink-0 p-3" id="sidebar" style="width: 250px;">
             <div class="nav-header d-flex align-items-center">
                 <i class="bi bi-fire text-danger fs-4 me-2"></i>
                 CFARM FEM System
@@ -204,6 +234,14 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#sidebarToggle, #sidebarOverlay').click(function() {
+                $('#sidebar').toggleClass('show');
+                $('#sidebarOverlay').toggleClass('show');
+            });
+        });
+    </script>
     @yield('scripts')
 </body>
 </html>

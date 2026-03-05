@@ -1,17 +1,17 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    {{ __("You're logged in!") }}
-                </div>
+@section('page_title', 'Dashboard')
+
+@section('content')
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 text-center">
+                <i class="bi bi-speedometer2 display-1 text-primary mb-3"></i>
+                <h4 class="fw-bold">ยินดีต้อนรับเข้าสู่ระบบจัดการถังดับเพลิง</h4>
+                <p class="text-muted mb-0">คุณได้เข้าสู่ระบบเรียบร้อยแล้ว: ยินดีต้อนรับกลับมา, <strong>{{ auth()->user()->name ?? 'ผู้ใช้งาน' }}</strong>!</p>
             </div>
         </div>
     </div>
-</x-app-layout>
+</div>
+@endsection
