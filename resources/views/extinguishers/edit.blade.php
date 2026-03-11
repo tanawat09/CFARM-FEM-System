@@ -22,11 +22,9 @@
                     <label class="form-label fw-semibold">ประเภท <span class="text-danger">*</span></label>
                     <select name="type" class="form-select @error('type') is-invalid @enderror" required>
                         <option value="">-- เลือก --</option>
-                        <option value="Dry_Chemical" {{ old('type', $extinguisher->type) == 'Dry_Chemical' ? 'selected' : '' }}>Dry Chemical (ผงเคมีแห้ง)</option>
-                        <option value="CO2" {{ old('type', $extinguisher->type) == 'CO2' ? 'selected' : '' }}>CO2 (คาร์บอนไดออกไซด์)</option>
-                        <option value="Foam" {{ old('type', $extinguisher->type) == 'Foam' ? 'selected' : '' }}>Foam (โฟม)</option>
-                        <option value="Water" {{ old('type', $extinguisher->type) == 'Water' ? 'selected' : '' }}>Water (น้ำ)</option>
-                        <option value="Clean_Agent" {{ old('type', $extinguisher->type) == 'Clean_Agent' ? 'selected' : '' }}>Clean Agent (สารสะอาด)</option>
+                        @foreach($types as $t)
+                            <option value="{{ $t }}" {{ old('type', $extinguisher->type) == $t ? 'selected' : '' }}>{{ $t }}</option>
+                        @endforeach
                     </select>
                 </div>
                 
@@ -43,14 +41,9 @@
                     </select>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label fw-semibold">ยี่ห้อ (Brand) <span class="text-danger">*</span></label>
                     <input type="text" name="brand" class="form-control @error('brand') is-invalid @enderror" value="{{ old('brand', $extinguisher->brand) }}" required>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">รุ่น (Model) <span class="text-danger">*</span></label>
-                    <input type="text" name="model" class="form-control @error('model') is-invalid @enderror" value="{{ old('model', $extinguisher->model) }}" required>
                 </div>
             </div>
 

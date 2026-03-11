@@ -2,6 +2,19 @@
 
 @section('page_title', 'รายงานสรุปการตรวจเช็คประจำเดือน')
 
+@section('styles')
+<style>
+    @media print {
+        body { background-color: #fff !important; }
+        .sidebar, .topbar, .d-print-none { display: none !important; }
+        .main-content { width: 100% !important; padding: 0 !important; margin: 0 !important; }
+        .card { box-shadow: none !important; border: none !important; }
+        .card-header { padding: 0 0 1rem 0 !important; border-bottom: 2px solid #000 !important; }
+        .card-body { padding: 1rem 0 0 0 !important; }
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
@@ -9,8 +22,9 @@
             <h5 class="fw-bold mb-0 text-dark">ข้อมูลตรวจเช็ค เดือน {{ $month }} ปี {{ $year + 543 }}</h5>
         </div>
         <div>
-            <a href="{{ route('reports.index') }}" class="btn btn-light rounded-pill px-3 shadow-sm me-2"><i class="bi bi-arrow-left"></i> กลับ</a>
-            <a href="{{ route('reports.export-pdf', ['month' => $month, 'year' => $year]) }}" class="btn btn-danger rounded-pill px-3 shadow-sm"><i class="bi bi-file-pdf"></i> พิมพ์ PDF</a>
+            <a href="{{ route('reports.index') }}" class="btn btn-light rounded-pill px-3 shadow-sm me-2 d-print-none"><i class="bi bi-arrow-left"></i> กลับ</a>
+            <button type="button" onclick="window.print()" class="btn btn-secondary rounded-pill px-3 shadow-sm me-2 d-print-none"><i class="bi bi-printer"></i> พิมพ์หน้านี้</button>
+            <a href="{{ route('reports.export-monthly-pdf', ['month' => $month, 'year' => $year]) }}" class="btn btn-danger rounded-pill px-3 shadow-sm d-print-none"><i class="bi bi-file-pdf"></i> พิมพ์ PDF</a>
         </div>
     </div>
     <div class="card-body p-4 p-md-5">

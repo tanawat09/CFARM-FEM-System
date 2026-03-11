@@ -21,11 +21,9 @@
                     <label class="form-label fw-semibold">ประเภท <span class="text-danger">*</span></label>
                     <select name="type" class="form-select @error('type') is-invalid @enderror" required>
                         <option value="">-- เลือก --</option>
-                        <option value="Dry_Chemical">Dry Chemical (ผงเคมีแห้ง)</option>
-                        <option value="CO2">CO2 (คาร์บอนไดออกไซด์)</option>
-                        <option value="Foam">Foam (โฟม)</option>
-                        <option value="Water">Water (น้ำ)</option>
-                        <option value="Clean_Agent">Clean Agent (สารสะอาด)</option>
+                        @foreach($types as $t)
+                            <option value="{{ $t }}" {{ old('type') == $t ? 'selected' : '' }}>{{ $t }}</option>
+                        @endforeach
                     </select>
                 </div>
                 
@@ -42,14 +40,9 @@
                     </select>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label fw-semibold">ยี่ห้อ (Brand) <span class="text-danger">*</span></label>
                     <input type="text" name="brand" class="form-control @error('brand') is-invalid @enderror" value="{{ old('brand') }}" required>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">รุ่น (Model) <span class="text-danger">*</span></label>
-                    <input type="text" name="model" class="form-control @error('model') is-invalid @enderror" value="{{ old('model') }}" required>
                 </div>
             </div>
 

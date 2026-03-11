@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Location;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class LocationController extends Controller
 {
@@ -22,11 +23,17 @@ class LocationController extends Controller
     {
         $validated = $request->validate([
             'location_name' => 'required|string|max:255',
+            'floor_plan_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
         ]);
 
         $validated['building'] = '-';
         $validated['floor'] = '-';
         $validated['location_code'] = 'LOC-' . strtoupper(\Illuminate\Support\Str::random(6));
+
+        if ($request->hasFile('floor_plan_image')) {
+            $path = $request->file('floor_plan_image')->store('locations', 'public');
+            $validated['floor_plan_image'] = $path;
+        }
 
         Location::create($validated);
 
@@ -43,10 +50,20 @@ class LocationController extends Controller
         $validated = $request->validate([
             'location_name' => 'required|string|max:255',
             'is_active' => 'boolean',
+            'floor_plan_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
         ]);
 
         $validated['building'] = '-';
         $validated['floor'] = '-';
+
+        if ($request->hasFile('floor_plan_image')) {
+            // Delete old image if exists
+            if ($location->floor_plan_image) {
+                Storage::disk('public')->delete($location->floor_plan_image);
+            }
+            $path = $request->file('floor_plan_image')->store('locations', 'public');
+            $validated['floor_plan_image'] = $path;
+        }
 
         $location->update($validated);
 

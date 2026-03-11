@@ -5,11 +5,16 @@
 @section('content')
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white pt-3 pb-3 d-flex justify-content-between align-items-center">
-        <!-- Search -->
-        <form class="d-flex" action="{{ route('extinguishers.index') }}" method="GET">
+        <form class="d-flex w-50" action="{{ route('extinguishers.index') }}" method="GET" id="searchForm">
             <div class="input-group">
-                <input type="text" name="search" class="form-control" placeholder="ค้นหาหมายเลขซีเรียล (S/N)" value="{{ request('search') }}">
-                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                <select name="location_id" class="form-select border-end-0" style="max-width: 200px;" onchange="document.getElementById('searchForm').submit()">
+                    <option value="">-- ทุกพื้นที่ --</option>
+                    @foreach($locations as $loc)
+                        <option value="{{ $loc->id }}" {{ request('location_id') == $loc->id ? 'selected' : '' }}>{{ $loc->location_name }}</option>
+                    @endforeach
+                </select>
+                <input type="text" name="search" class="form-control" placeholder="ค้นหาหมายเลขซีเรียล (S/N)..." value="{{ request('search') }}">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> ค้นหา</button>
             </div>
         </form>
 
@@ -22,11 +27,29 @@
     </div>
     
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <form action="{{ route('extinguishers.bulk-qr') }}" method="POST" target="_blank" id="bulkQrForm">
+            @csrf
+            
+            <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="form-check d-inline-block me-3">
+                        <input class="form-check-input" type="checkbox" id="selectAll">
+                        <label class="form-check-label fw-bold" for="selectAll">
+                            เลือกทั้งหมดในหน้านี้
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-sm btn-dark" id="btnBulkQr" disabled>
+                    <i class="bi bi-printers"></i> พิมพ์ QR (ที่เลือก)
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="ps-3 border-0">หมายเลขซีเรียล (S/N)</th>
+                        <th class="ps-3 border-0" width="3%"></th>
+                        <th class="border-0">หมายเลขซีเรียล (S/N)</th>
                         <th class="border-0">พื้นที่ติดตั้ง</th>
                         <th class="border-0">ประเภท / ขนาด</th>
                         <th class="border-0">ยี่ห้อ / รุ่น</th>
@@ -39,6 +62,9 @@
                     @forelse($extinguishers as $ext)
                     <tr>
                         <td class="ps-3">
+                            <input class="form-check-input row-checkbox" type="checkbox" name="ids[]" value="{{ $ext->id }}">
+                        </td>
+                        <td>
                             <span class="fw-bold fs-6">{{ $ext->serial_number }}</span>
                         </td>
                         <td>
@@ -79,7 +105,7 @@
                             @endif
                         </td>
                         <td class="text-end pe-3">
-                            <div class="btn-group">
+                            <div class="d-flex justify-content-end gap-1">
                                 <a href="{{ route('extinguishers.qr', $ext->id) }}" class="btn btn-sm btn-outline-dark" title="พิมพ์ QR Code" target="_blank">
                                     <i class="bi bi-qr-code"></i>
                                 </a>
@@ -89,12 +115,19 @@
                                 <a href="{{ route('extinguishers.edit', $ext->id) }}" class="btn btn-sm btn-outline-primary" title="แก้ไข">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                <form action="{{ route('extinguishers.destroy', $ext->id) }}" method="POST" class="d-inline" onsubmit="return confirm('ยืนยันการลบถังดับเพลิงหมายเลข {{ $ext->serial_number }} ถาวร?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="ลบถังดับเพลิง">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
+                        <td colspan="8" class="text-center py-5 text-muted">
                             <i class="bi bi-shield-x display-4 text-secondary opacity-25 d-block mb-3"></i>
                             <span class="fs-5">ไม่พบข้อมูลถังดับเพลิงในระบบ</span>
                         </td>
@@ -103,6 +136,7 @@
                 </tbody>
             </table>
         </div>
+        </form>
     </div>
     
     @if(isset($extinguishers) && $extinguishers->lastPage() > 1)
@@ -111,4 +145,38 @@
     </div>
     @endif
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        const btnBulkQr = document.getElementById('btnBulkQr');
+
+        function updateButtonState() {
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            btnBulkQr.disabled = checkedCount === 0;
+            btnBulkQr.innerHTML = '<i class="bi bi-printers"></i> พิมพ์ QR (' + checkedCount + ')';
+        }
+
+        if(selectAll) {
+            selectAll.addEventListener('change', function() {
+                checkboxes.forEach(cb => cb.checked = this.checked);
+                updateButtonState();
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if(!this.checked && selectAll.checked) {
+                    selectAll.checked = false;
+                } else if(this.checked && document.querySelectorAll('.row-checkbox:checked').length === checkboxes.length) {
+                    selectAll.checked = true;
+                }
+                updateButtonState();
+            });
+        });
+    });
+</script>
 @endsection

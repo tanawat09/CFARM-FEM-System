@@ -2,6 +2,19 @@
 
 @section('page_title', 'รายงานสรุปการตรวจเช็คประจำปี')
 
+@section('styles')
+<style>
+    @media print {
+        body { background-color: #fff !important; }
+        .sidebar, .topbar, .d-print-none { display: none !important; }
+        .main-content { width: 100% !important; padding: 0 !important; margin: 0 !important; }
+        .card { box-shadow: none !important; border: none !important; }
+        .card-header { padding: 0 0 1rem 0 !important; border-bottom: 2px solid #000 !important; }
+        .card-body { padding: 1rem 0 0 0 !important; }
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
@@ -9,7 +22,7 @@
             <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar3 text-success me-2"></i> รายงานสรุปการตรวจเช็คประจำปี (ภาพรวม)</h5>
             <small class="text-muted">แสดงข้อมูลสถิติประจำปี {{ $year + 543 }}</small>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 d-print-none">
             <a href="{{ route('reports.index') }}" class="btn btn-light btn-sm rounded-pill px-3"><i class="bi bi-arrow-left"></i> ย้อนกลับ</a>
             <button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์ / PDF</button>
             <a href="{{ route('reports.export-excel', ['year' => $year]) }}" class="btn btn-success btn-sm rounded-pill px-3"><i class="bi bi-file-earmark-excel"></i> ส่งออก Excel</a>

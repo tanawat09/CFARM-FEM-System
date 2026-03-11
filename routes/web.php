@@ -79,6 +79,7 @@ Route::middleware(['auth'])->group(function () {
     // Admin & Safety Officer
     Route::middleware(['role:admin|safety_officer'])->group(function () {
         Route::get('extinguishers/{extinguisher}/qr', [FireExtinguisherController::class, 'printQr'])->name('extinguishers.qr');
+        Route::post('extinguishers/bulk-qr', [FireExtinguisherController::class, 'bulkQr'])->name('extinguishers.bulk-qr');
         Route::get('extinguishers/{extinguisher}/history', [FireExtinguisherController::class, 'history'])->name('extinguishers.history');
         Route::resource('extinguishers', FireExtinguisherController::class);
 
@@ -97,6 +98,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('reports/export-monthly-pdf', [ReportController::class, 'exportMonthlyPdf'])->name('reports.export-monthly-pdf');
         Route::get('reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
         Route::get('reports/damage', [ReportController::class, 'damageReport'])->name('reports.damage');
+
+        // MAP (Interactive Floor Plan)
+        Route::get('map', [\App\Http\Controllers\MapController::class, 'index'])->name('map.index');
+        Route::post('map/pin', [\App\Http\Controllers\MapController::class, 'savePin'])->name('map.save-pin');
+        Route::post('map/pin/remove', [\App\Http\Controllers\MapController::class, 'removePin'])->name('map.remove-pin');
     });
 });
 

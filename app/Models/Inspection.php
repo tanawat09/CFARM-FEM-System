@@ -32,7 +32,7 @@ class Inspection extends Model
 
     public function fireExtinguisher()
     {
-        return $this->belongsTo(FireExtinguisher::class, 'extinguisher_id');
+        return $this->belongsTo(FireExtinguisher::class, 'extinguisher_id')->withTrashed();
     }
 
     public function inspectedBy()

@@ -47,10 +47,17 @@
                             <span class="fw-bold text-dark">{{ $ins->inspection_no ?? 'INS-'.sprintf("%04d", $ins->id) }}</span>
                         </td>
                         <td>
-                            <a href="{{ route('extinguishers.show', $ins->fireExtinguisher->id) }}" class="text-decoration-none fw-semibold d-block">
-                                <i class="bi bi-upc-scan me-1"></i> {{ $ins->fireExtinguisher->serial_number ?? 'N/A' }}
-                            </a>
-                            <small class="text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i> {{ $ins->fireExtinguisher->location->location_name ?? 'ไม่ระบุ' }}</small>
+                            @if($ins->fireExtinguisher)
+                                <a href="{{ route('extinguishers.show', $ins->fireExtinguisher->id) }}" class="text-decoration-none fw-semibold d-block">
+                                    <i class="bi bi-upc-scan me-1"></i> {{ $ins->fireExtinguisher->serial_number }}
+                                </a>
+                                <small class="text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i> {{ $ins->fireExtinguisher->location->location_name ?? 'ไม่ระบุ' }}</small>
+                            @else
+                                <span class="fw-semibold text-muted text-decoration-line-through d-block">
+                                    <i class="bi bi-upc-scan me-1"></i> ถังดับเพลิงถูกลบแล้ว
+                                </span>
+                                <small class="text-muted"><i class="bi bi-geo-alt me-1 opacity-50"></i> ไม่ทราบพื้นที่</small>
+                            @endif
                         </td>
                         <td>
                             <div class="d-flex align-items-center">

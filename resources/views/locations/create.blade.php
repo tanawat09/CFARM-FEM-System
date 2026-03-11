@@ -11,7 +11,7 @@
             </div>
             
             <div class="card-body p-4 p-md-5">
-                <form action="{{ route('locations.store') }}" method="POST">
+                <form action="{{ route('locations.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
                     <div class="row g-3 mb-4">
@@ -30,6 +30,13 @@
                                 <option value="ฟาร์มก้านเหลือง">
                             </datalist>
                             @error('location_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        
+                        <div class="col-md-12 mt-4">
+                            <label class="form-label fw-bold">รูปภาพแผนผังอาคาร <span class="text-muted fw-normal">(ถ้ามี)</span></label>
+                            <input type="file" name="floor_plan_image" class="form-control @error('floor_plan_image') is-invalid @enderror" accept="image/*">
+                            <div class="form-text text-muted">ใช้สำหรับระบบปักหมุดตำแหน่งถังดับเพลิงในเมนูแผนผัง (รองรับไฟล์ jpg, png ขนาดไม่เกิน 4MB)</div>
+                            @error('floor_plan_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
 

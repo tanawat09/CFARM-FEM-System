@@ -39,7 +39,7 @@
     <input type="hidden" name="extinguisher_id" value="{{ $extinguisher->id }}">
     
     <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-        <h6 class="fw-bold mb-0 text-dark">รายการตรวจเช็ค <span class="badge bg-primary ms-1" id="progressBadge">0/14</span></h6>
+        <h6 class="fw-bold mb-0 text-dark">รายการตรวจเช็ค <span class="badge bg-primary ms-1" id="progressBadge">0/{{ count($checklist) }}</span></h6>
     </div>
 
     <!-- Toggle Checklist Area -->

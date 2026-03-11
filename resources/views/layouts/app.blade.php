@@ -123,6 +123,12 @@
                         <i class="bi bi-heptagon"></i> จัดการถังดับเพลิง
                     </a>
                 </li>
+                <!-- Map Layout -->
+                <li>
+                    <a href="{{ route('map.index') }}" class="sidebar-link {{ request()->routeIs('map.*') ? 'active' : '' }}">
+                        <i class="bi bi-map"></i> แผนผัง (Layout)
+                    </a>
+                </li>
                 <li>
                     <a href="{{ route('inspections.index') }}" class="sidebar-link {{ request()->routeIs('inspections.*') ? 'active' : '' }}">
                         <i class="bi bi-clipboard2-check"></i> ตรวจเช็ค (Inspections)

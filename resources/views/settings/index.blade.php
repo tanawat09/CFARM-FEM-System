@@ -21,6 +21,11 @@
                             <label class="form-label fw-bold">ชื่อองค์กร / บริษัท</label>
                             <input type="text" name="company_name" class="form-control" value="{{ old('company_name', $settings['company_name'] ?? 'CFARM FEM System') }}" required>
                         </div>
+                        <div class="col-md-12 mt-4">
+                            <label class="form-label fw-bold">ประเภทของถังดับเพลิง <span class="text-muted fw-normal">(คั่นแต่ละประเภทด้วยเครื่องหมายลูกน้ำ , )</span></label>
+                            <textarea name="extinguisher_types" class="form-control" rows="3" placeholder="เช่น CO2, Dry Chemical, Foam">{{ old('extinguisher_types', $settings['extinguisher_types'] ?? 'CO2,Dry_Chemical,Foam,Water,Clean_Agent') }}</textarea>
+                            <small class="text-muted d-block mt-2">รายการนี้จะแสดงเป็นตัวเลือก (Dropdown) ในหน้าเพิ่มและแก้ไขถังดับเพลิง. ประเภทที่แนะนำ: CO2, Dry Chemical, Foam, Water, Clean Agent, ฯลฯ</small>
+                        </div>
                     </div>
 
                     <h6 class="fw-bold mt-5 mb-3 pb-2 border-bottom text-primary">การคำนวณวงรอบแจ้งเตือน</h6>

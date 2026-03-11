@@ -23,6 +23,7 @@ class SettingController extends Controller
             'warning_days_before' => 'required|integer|min:1',
             'telegram_bot_token' => 'nullable|string',
             'telegram_chat_id' => 'nullable|string',
+            'extinguisher_types' => 'nullable|string',
         ]);
 
         foreach ($validated as $key => $value) {

@@ -19,6 +19,7 @@ class Location extends Model
         'gps_lng',
         'description',
         'is_active',
+        'floor_plan_image',
     ];
 
     protected $casts = [

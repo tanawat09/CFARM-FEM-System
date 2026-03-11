@@ -12,7 +12,7 @@
             </div>
             
             <div class="card-body p-4 p-md-5">
-                <form action="{{ route('locations.update', $location->id) }}" method="POST">
+                <form action="{{ route('locations.update', $location->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     
@@ -41,6 +41,19 @@
                                 <option value="0" {{ !old('is_active', $location->is_active) ? 'selected' : '' }}>ระงับชั่วคราว / ยกเลิกพื้นที่นี้ (ปิดใช้งาน)</option>
                             </select>
                             @error('is_active') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="col-md-12 mt-4">
+                            <label class="form-label fw-bold">รูปภาพแผนผังอาคาร <span class="text-muted fw-normal">(ถ้ามี)</span></label>
+                            @if($location->floor_plan_image)
+                                <div class="mb-3">
+                                    <img src="{{ asset('storage/' . $location->floor_plan_image) }}" alt="Floor Plan" class="img-thumbnail" style="max-height: 200px;">
+                                    <div class="form-text mt-1 text-success"><i class="bi bi-check-circle"></i> มีรูปแผนผังติดตั้งอยู่แล้ว หากต้องการเปลี่ยนให้อัปโหลดใหม่</div>
+                                </div>
+                            @endif
+                            <input type="file" name="floor_plan_image" class="form-control @error('floor_plan_image') is-invalid @enderror" accept="image/*">
+                            <div class="form-text text-muted">ใช้สำหรับระบบปักหมุดตำแหน่งถังดับเพลิงในเมนูแผนผัง (รองรับไฟล์ jpg, png ขนาดไม่เกิน 4MB)</div>
+                            @error('floor_plan_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
 

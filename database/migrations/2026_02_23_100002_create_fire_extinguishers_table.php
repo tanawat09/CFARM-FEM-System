@@ -16,7 +16,7 @@ return new class extends Migration
             $table->decimal('size', 8, 2)->comment('หน่วย kg หรือ lbs');
             $table->enum('size_unit', ['kg', 'lbs'])->default('kg')->comment('เพิ่มเติม');
             $table->string('brand');
-            $table->string('model');
+            $table->string('model')->nullable()->comment('Removed from UI requirement');
             $table->date('manufacture_date');
             $table->date('install_date');
             $table->date('expire_date')->comment('คำนวณจาก manufacture_date + 5 ปี');

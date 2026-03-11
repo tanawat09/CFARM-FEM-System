@@ -28,6 +28,8 @@ class FireExtinguisher extends Model
         'house',
         'zone',
         'status',
+        'map_x',
+        'map_y',
         'qr_code',
         'qr_code_image',
         'note',
