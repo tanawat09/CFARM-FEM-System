@@ -158,6 +158,17 @@ class InspectionController extends Controller
         return view('inspections.show', compact('inspection'));
     }
 
+    public function destroy(Inspection $inspection)
+    {
+        // Delete related items
+        $inspection->inspectionItems()->delete();
+        
+        // Soft delete the inspection record itself
+        $inspection->delete();
+
+        return redirect()->route('inspections.index')->with('success', 'ลบประวัติการตรวจเช็คเรียบร้อยแล้ว');
+    }
+
     public function saveDraft(Request $request)
     {
         // Implementation for auto save draft

@@ -115,13 +115,9 @@
                                 <a href="{{ route('extinguishers.edit', $ext->id) }}" class="btn btn-sm btn-outline-primary" title="แก้ไข">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form action="{{ route('extinguishers.destroy', $ext->id) }}" method="POST" class="d-inline" onsubmit="return confirm('ยืนยันการลบถังดับเพลิงหมายเลข {{ $ext->serial_number }} ถาวร?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="ลบถังดับเพลิง">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="ลบถังดับเพลิง" onclick="confirmDelete({{ $ext->id }}, '{{ $ext->serial_number }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -145,6 +141,12 @@
     </div>
     @endif
 </div>
+
+<!-- Hidden Delete Form -->
+<form id="deleteExtinguisherForm" method="POST" class="d-none">
+    @csrf
+    @method('DELETE')
+</form>
 @endsection
 
 @section('scripts')
@@ -178,5 +180,13 @@
             });
         });
     });
+
+    function confirmDelete(id, serial) {
+        if(confirm('ยืนยันการลบถังดับเพลิงหมายเลข ' + serial + ' ถาวร?')) {
+            const form = document.getElementById('deleteExtinguisherForm');
+            form.action = '/extinguishers/' + id;
+            form.submit();
+        }
+    }
 </script>
 @endsection

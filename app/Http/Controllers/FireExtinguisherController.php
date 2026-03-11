@@ -119,8 +119,7 @@ class FireExtinguisherController extends Controller
     public function bulkQr(Request $request)
     {
         $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:fire_extinguishers,id'
+            'ids' => 'required|array'
         ]);
 
         $extinguishers = FireExtinguisher::whereIn('id', $request->ids)->with('location')->get();

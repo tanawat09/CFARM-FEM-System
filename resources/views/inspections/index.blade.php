@@ -79,9 +79,18 @@
                              @endif
                         </td>
                         <td class="pe-4 text-end">
-                            <a href="{{ route('inspections.show', $ins->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                ดูรายละเอียด
-                            </a>
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="{{ route('inspections.show', $ins->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    ดูรายละเอียด
+                                </a>
+                                <form action="{{ route('inspections.destroy', $ins->id) }}" method="POST" class="d-inline" onsubmit="return confirm('ยืนยันลบประวัติการตรวจเช็คเลขที่ {{ $ins->inspection_no ?? 'INS-'.sprintf("%04d", $ins->id) }} ถาวร?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="ลบประวัติ">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
