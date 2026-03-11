@@ -25,6 +25,14 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Route to serve internal images directly without symlinks (Useful for Docker/Windows)
+Route::get('/local-storage/locations/{filename}', function ($filename) {
+    if (!\Illuminate\Support\Facades\Storage::disk('public')->exists('locations/' . $filename)) {
+        abort(404);
+    }
+    return \Illuminate\Support\Facades\Storage::disk('public')->response('locations/' . $filename);
+})->name('storage.locations');
+
 Route::get('/setup-fonts', function () {
     $dir = public_path('fonts');
     if (!is_dir($dir)) {

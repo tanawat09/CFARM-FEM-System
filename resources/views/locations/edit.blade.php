@@ -47,7 +47,7 @@
                             <label class="form-label fw-bold">รูปภาพแผนผังอาคาร <span class="text-muted fw-normal">(ถ้ามี)</span></label>
                             @if($location->floor_plan_image)
                                 <div class="mb-3">
-                                    <img src="{{ url('storage/' . $location->floor_plan_image) }}" alt="Floor Plan" class="img-thumbnail" style="max-height: 200px;">
+                                    <img src="{{ url('local-storage/' . $location->floor_plan_image) }}" alt="Floor Plan" class="img-thumbnail" style="max-height: 200px;">
                                     <div class="form-text mt-1 text-success"><i class="bi bi-check-circle"></i> มีรูปแผนผังติดตั้งอยู่แล้ว หากต้องการเปลี่ยนให้อัปโหลดใหม่</div>
                                 </div>
                             @endif

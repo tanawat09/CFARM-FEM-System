@@ -132,7 +132,7 @@
         <div class="card border-0 shadow-sm rounded-4 position-relative">
             <div class="card-body p-3">
                 <div class="map-container" id="map-container">
-                    <img src="{{ url('storage/' . $selectedLocation->floor_plan_image) }}" alt="Floor Plan for {{ $selectedLocation->location_name }}" class="map-image" id="map-image">
+                    <img src="{{ url('local-storage/' . $selectedLocation->floor_plan_image) }}" alt="Floor Plan for {{ $selectedLocation->location_name }}" class="map-image" id="map-image">
                     @foreach($pinned as $ext)
                         @php
                             $statusClass = 'status-' . $ext->status;
