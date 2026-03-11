@@ -84,13 +84,16 @@ Route::middleware(['auth'])->group(function () {
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
     });
 
-    // Admin & Safety Officer
-    Route::middleware(['role:admin|safety_officer'])->group(function () {
+    // Admin Only (Manage Extinguishers)
+    Route::middleware(['role:admin'])->group(function () {
         Route::get('extinguishers/{extinguisher}/qr', [FireExtinguisherController::class, 'printQr'])->name('extinguishers.qr');
         Route::post('extinguishers/bulk-qr', [FireExtinguisherController::class, 'bulkQr'])->name('extinguishers.bulk-qr');
         Route::get('extinguishers/{extinguisher}/history', [FireExtinguisherController::class, 'history'])->name('extinguishers.history');
         Route::resource('extinguishers', FireExtinguisherController::class);
+    });
 
+    // All Auth Users (Admin, Safety Officer, User)
+    Route::middleware(['role:admin|safety_officer|user'])->group(function () {
         Route::get('scan/{qr_code}', [InspectionController::class, 'scanQr'])->name('scan.qr');
         Route::post('inspections/draft', [InspectionController::class, 'saveDraft'])->name('inspections.draft.save');
         Route::get('inspections/draft/{id}', [InspectionController::class, 'loadDraft'])->name('inspections.draft.load');

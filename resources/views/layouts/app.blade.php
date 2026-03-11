@@ -118,11 +118,13 @@
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
                 </li>
+                @if(auth()->check() && auth()->user()->role == 'admin')
                 <li>
                     <a href="{{ route('extinguishers.index') }}" class="sidebar-link {{ request()->routeIs('extinguishers.*') ? 'active' : '' }}">
                         <i class="bi bi-heptagon"></i> จัดการถังดับเพลิง
                     </a>
                 </li>
+                @endif
                 <!-- Map Layout -->
                 <li>
                     <a href="{{ route('map.index') }}" class="sidebar-link {{ request()->routeIs('map.*') ? 'active' : '' }}">
