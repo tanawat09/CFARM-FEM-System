@@ -23,7 +23,7 @@ class LocationController extends Controller
     {
         $validated = $request->validate([
             'location_name' => 'required|string|max:255',
-            'floor_plan_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+            'floor_plan_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $validated['building'] = '-';
@@ -50,7 +50,7 @@ class LocationController extends Controller
         $validated = $request->validate([
             'location_name' => 'required|string|max:255',
             'is_active' => 'boolean',
-            'floor_plan_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+            'floor_plan_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $validated['building'] = '-';

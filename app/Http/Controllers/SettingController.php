@@ -26,10 +26,17 @@ class SettingController extends Controller
             'extinguisher_types' => 'nullable|string',
         ]);
 
+        $sensitiveKeys = ['telegram_bot_token'];
+
         foreach ($validated as $key => $value) {
+            $storeValue = $value ?? '';
+            // Encrypt sensitive values
+            if (in_array($key, $sensitiveKeys) && $storeValue !== '') {
+                $storeValue = encrypt($storeValue);
+            }
             SystemSetting::updateOrCreate(
                 ['key' => $key],
-                ['value' => $value ?? '']
+                ['value' => $storeValue]
             );
         }
 

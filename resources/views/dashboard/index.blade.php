@@ -81,6 +81,135 @@
     </div>
 </div>
 
+<!-- Safety Equipment: Emergency Light -->
+<h6 class="fw-bold text-muted mt-4 mb-3"><i class="bi bi-lightbulb text-warning me-2"></i> ไฟฉุกเฉิน (Emergency Light)</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-warning border-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-warning bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-lightbulb fs-3 text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ทั้งหมด</h6>
+                        <h3 class="fw-bold mb-0">{{ $elTotal ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-check-circle fs-3 text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">พร้อมใช้งาน</h6>
+                        <h3 class="fw-bold mb-0 text-success">{{ $elActive ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-danger bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-tools fs-3 text-danger"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ชำรุด / ไม่ใช้งาน</h6>
+                        <h3 class="fw-bold mb-0 text-danger">{{ $elDamage ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-clipboard-check fs-3 text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ตรวจเดือนนี้</h6>
+                        <h3 class="fw-bold mb-0 text-info">{{ $elInspectedThisMonth ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Safety Equipment: Eyewash & Shower -->
+<h6 class="fw-bold text-muted mb-3"><i class="bi bi-droplet text-info me-2"></i> ที่ล้างตา/ฝักบัวฉุกเฉิน (Eyewash & Shower)</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-info border-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-droplet fs-3 text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ทั้งหมด</h6>
+                        <h3 class="fw-bold mb-0">{{ $ewTotal ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-check-circle fs-3 text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">พร้อมใช้งาน</h6>
+                        <h3 class="fw-bold mb-0 text-success">{{ $ewActive ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-danger bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-tools fs-3 text-danger"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ชำรุด / ไม่ใช้งาน</h6>
+                        <h3 class="fw-bold mb-0 text-danger">{{ $ewDamage ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-clipboard-check fs-3 text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ตรวจเดือนนี้</h6>
+                        <h3 class="fw-bold mb-0 text-info">{{ $ewInspectedThisMonth ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="row g-3">
     <!-- Chart Section (Dummpy placeholder for now) -->
     <div class="col-12 col-lg-8">

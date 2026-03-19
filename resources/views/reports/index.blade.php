@@ -116,5 +116,165 @@
             </div>
         </div>
     </div>
+
+    <!-- Safety Equipment: Emergency Light Report -->
+    <div class="col-md-6 mt-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-warning border-3">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning me-3">
+                        <i class="bi bi-lightbulb fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">รายงานสรุปการตรวจเช็คไฟฉุกเฉินประจำเดือน</h5>
+                        <small class="text-muted">สรุปผลการตรวจไฟฉุกเฉิน (Emergency Light) แยกตามพื้นที่</small>
+                    </div>
+                </div>
+
+                <form action="{{ route('reports.equipment-monthly') }}" method="GET" class="mt-4">
+                    <input type="hidden" name="type" value="emergency_light">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium">เดือน</label>
+                            <select name="month" class="form-select border-light shadow-sm">
+                                @foreach(range(1, 12) as $m)
+                                    <option value="{{ sprintf('%02d', $m) }}" {{ date('m') == $m ? 'selected' : '' }}>
+                                        {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium">ปี</label>
+                            <select name="year" class="form-select border-light shadow-sm">
+                                @foreach(range(date('Y'), date('Y') - 5) as $y)
+                                    <option value="{{ $y }}">{{ $y + 543 }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-warning rounded-pill px-4 text-dark"><i class="bi bi-search me-1"></i> ดูรายงาน</button>
+                        <button type="submit" formaction="{{ route('reports.export-equipment-monthly-pdf') }}" class="btn btn-outline-danger rounded-pill px-4"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Safety Equipment: Eyewash & Shower Report -->
+    <div class="col-md-6 mt-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-info border-3">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-info bg-opacity-10 p-3 rounded-circle text-info me-3">
+                        <i class="bi bi-droplet fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">รายงานสรุปการตรวจที่ล้างตา/ฝักบัวฉุกเฉินประจำเดือน</h5>
+                        <small class="text-muted">สรุปผลการตรวจ Eyewash & Shower แยกตามพื้นที่</small>
+                    </div>
+                </div>
+
+                <form action="{{ route('reports.equipment-monthly') }}" method="GET" class="mt-4">
+                    <input type="hidden" name="type" value="eyewash_shower">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium">เดือน</label>
+                            <select name="month" class="form-select border-light shadow-sm">
+                                @foreach(range(1, 12) as $m)
+                                    <option value="{{ sprintf('%02d', $m) }}" {{ date('m') == $m ? 'selected' : '' }}>
+                                        {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium">ปี</label>
+                            <select name="year" class="form-select border-light shadow-sm">
+                                @foreach(range(date('Y'), date('Y') - 5) as $y)
+                                    <option value="{{ $y }}">{{ $y + 543 }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-info rounded-pill px-4 text-white"><i class="bi bi-search me-1"></i> ดูรายงาน</button>
+                        <button type="submit" formaction="{{ route('reports.export-equipment-monthly-pdf') }}" class="btn btn-outline-danger rounded-pill px-4"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Annual: Emergency Light Report -->
+    <div class="col-md-6 mt-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-warning border-3">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning me-3">
+                        <i class="bi bi-calendar3 fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">รายงานสรุปการตรวจเช็คไฟฉุกเฉินประจำปี</h5>
+                        <small class="text-muted">สรุปแนวโน้มและภาพรวม Emergency Light รายปี</small>
+                    </div>
+                </div>
+
+                <form action="{{ route('reports.equipment-annual') }}" method="GET" class="mt-4">
+                    <input type="hidden" name="type" value="emergency_light">
+                    <div class="row g-2">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-medium">ประจำปี</label>
+                            <select name="year" class="form-select border-light shadow-sm">
+                                @foreach(range(date('Y'), date('Y') - 5) as $y)
+                                    <option value="{{ $y }}">{{ $y + 543 }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-warning rounded-pill px-4 text-dark"><i class="bi bi-search me-1"></i> ดูรายงาน</button>
+                        <button type="submit" formaction="{{ route('reports.export-equipment-annual-pdf') }}" class="btn btn-outline-danger rounded-pill px-4"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Annual: Eyewash & Shower Report -->
+    <div class="col-md-6 mt-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-info border-3">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-info bg-opacity-10 p-3 rounded-circle text-info me-3">
+                        <i class="bi bi-calendar3 fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">รายงานสรุปการตรวจที่ล้างตา/ฝักบัวฉุกเฉินประจำปี</h5>
+                        <small class="text-muted">สรุปแนวโน้มและภาพรวม Eyewash & Shower รายปี</small>
+                    </div>
+                </div>
+
+                <form action="{{ route('reports.equipment-annual') }}" method="GET" class="mt-4">
+                    <input type="hidden" name="type" value="eyewash_shower">
+                    <div class="row g-2">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-medium">ประจำปี</label>
+                            <select name="year" class="form-select border-light shadow-sm">
+                                @foreach(range(date('Y'), date('Y') - 5) as $y)
+                                    <option value="{{ $y }}">{{ $y + 543 }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-info rounded-pill px-4 text-white"><i class="bi bi-search me-1"></i> ดูรายงาน</button>
+                        <button type="submit" formaction="{{ route('reports.export-equipment-annual-pdf') }}" class="btn btn-outline-danger rounded-pill px-4"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

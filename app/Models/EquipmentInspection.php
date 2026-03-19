@@ -6,34 +6,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Auditable;
 
-class Inspection extends Model
+class EquipmentInspection extends Model
 {
     use HasFactory, Auditable;
 
     protected $fillable = [
         'inspection_no',
-        'extinguisher_id',
+        'equipment_id',
         'inspected_by',
         'inspected_at',
         'overall_result',
         'remark',
         'next_inspection_date',
-        'is_draft',
-        'draft_saved_at',
-        'weather_condition',
-        'device_info',
     ];
 
     protected $casts = [
         'inspected_at' => 'datetime',
         'next_inspection_date' => 'date',
-        'is_draft' => 'boolean',
-        'draft_saved_at' => 'datetime',
     ];
 
-    public function fireExtinguisher()
+    public function equipment()
     {
-        return $this->belongsTo(FireExtinguisher::class, 'extinguisher_id')->withTrashed();
+        return $this->belongsTo(SafetyEquipment::class, 'equipment_id');
     }
 
     public function inspectedBy()
@@ -43,11 +37,6 @@ class Inspection extends Model
 
     public function inspectionItems()
     {
-        return $this->hasMany(InspectionItem::class);
-    }
-
-    public function photos()
-    {
-        return $this->hasMany(Photo::class);
+        return $this->hasMany(EquipmentInspectionItem::class, 'inspection_id');
     }
 }

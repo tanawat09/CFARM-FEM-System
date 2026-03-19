@@ -137,6 +137,16 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('safety-equipment.index', ['type' => 'emergency_light']) }}" class="sidebar-link {{ (request()->routeIs('safety-equipment.*') || request()->routeIs('equipment-inspections.*')) && request('type', '') == 'emergency_light' ? 'active' : '' }}">
+                        <i class="bi bi-lightbulb"></i> จัดการไฟฉุกเฉิน
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('safety-equipment.index', ['type' => 'eyewash_shower']) }}" class="sidebar-link {{ (request()->routeIs('safety-equipment.*') || request()->routeIs('equipment-inspections.*')) && request('type', '') == 'eyewash_shower' ? 'active' : '' }}">
+                        <i class="bi bi-droplet"></i> จัดการที่ล้างตา/ฝักบัว
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('repair-logs.index') }}" class="sidebar-link {{ request()->routeIs('repair-logs.*') ? 'active' : '' }}">
                         <i class="bi bi-tools"></i> ซ่อมบำรุง
                     </a>
@@ -164,6 +174,11 @@
                 <li>
                     <a href="{{ route('settings.index') }}" class="sidebar-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                         <i class="bi bi-gear"></i> ตั้งค่าระบบ
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('audit-logs.index') }}" class="sidebar-link {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
+                        <i class="bi bi-journal-text"></i> Audit Logs
                     </a>
                 </li>
                 @endif

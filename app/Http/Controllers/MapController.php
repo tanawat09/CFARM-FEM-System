@@ -28,9 +28,9 @@ class MapController extends Controller
     public function savePin(Request $request)
     {
         $request->validate([
-            'extinguisher_id' => 'required|exists:fire_extinguishers,id',
-            'map_x' => 'required|numeric',
-            'map_y' => 'required|numeric',
+            'extinguisher_id' => 'required|integer|exists:fire_extinguishers,id',
+            'map_x' => 'required|numeric|min:0|max:10000',
+            'map_y' => 'required|numeric|min:0|max:10000',
         ]);
 
         $extinguisher = FireExtinguisher::findOrFail($request->extinguisher_id);

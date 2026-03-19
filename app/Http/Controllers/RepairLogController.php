@@ -36,7 +36,7 @@ class RepairLogController extends Controller
             'repair_no' => 'REP-' . date('Ym') . '-' . str_pad(RepairLog::count() + 1, 4, '0', STR_PAD_LEFT),
             'extinguisher_id' => $validated['extinguisher_id'],
             'problem' => $validated['problem'],
-            'repaired_by' => auth()->id() ?? 1,
+            'repaired_by' => auth()->id(),
             'status' => 'pending',
             'vendor_name' => $validated['vendor_name'] ?? null,
         ]);

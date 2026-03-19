@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\FireExtinguisher;
 use App\Models\Inspection;
 use App\Models\RepairLog;
+use App\Models\SafetyEquipment;
+use App\Models\EquipmentInspection;
 
 class DashboardController extends Controller
 {
@@ -83,6 +85,35 @@ class DashboardController extends Controller
             'failed' => $failedCounts,
         ];
 
+        // Safety Equipment Stats
+        $elQuery = SafetyEquipment::where('type', 'emergency_light');
+        $ewQuery = SafetyEquipment::where('type', 'eyewash_shower');
+
+        if ($selectedLocation) {
+            $elQuery->whereHas('location', fn($q) => $q->where('location_name', $selectedLocation));
+            $ewQuery->whereHas('location', fn($q) => $q->where('location_name', $selectedLocation));
+        }
+
+        $elTotal = (clone $elQuery)->count();
+        $elActive = (clone $elQuery)->where('status', 'active')->count();
+        $elDamage = (clone $elQuery)->whereIn('status', ['under_repair', 'inactive'])->count();
+        $elInspectedThisMonth = EquipmentInspection::whereHas('equipment', function($q) use ($selectedLocation) {
+            $q->where('type', 'emergency_light');
+            if ($selectedLocation) {
+                $q->whereHas('location', fn($q2) => $q2->where('location_name', $selectedLocation));
+            }
+        })->whereMonth('inspected_at', now()->month)->whereYear('inspected_at', now()->year)->count();
+
+        $ewTotal = (clone $ewQuery)->count();
+        $ewActive = (clone $ewQuery)->where('status', 'active')->count();
+        $ewDamage = (clone $ewQuery)->whereIn('status', ['under_repair', 'inactive'])->count();
+        $ewInspectedThisMonth = EquipmentInspection::whereHas('equipment', function($q) use ($selectedLocation) {
+            $q->where('type', 'eyewash_shower');
+            if ($selectedLocation) {
+                $q->whereHas('location', fn($q2) => $q2->where('location_name', $selectedLocation));
+            }
+        })->whereMonth('inspected_at', now()->month)->whereYear('inspected_at', now()->year)->count();
+
         return view('dashboard.index', compact(
             'totalExtinguishers',
             'activeExtinguishers',
@@ -93,7 +124,9 @@ class DashboardController extends Controller
             'recentInspections',
             'locationNames',
             'selectedLocation',
-            'chartData'
+            'chartData',
+            'elTotal', 'elActive', 'elDamage', 'elInspectedThisMonth',
+            'ewTotal', 'ewActive', 'ewDamage', 'ewInspectedThisMonth'
         ));
     }
 }

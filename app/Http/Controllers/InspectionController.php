@@ -109,7 +109,7 @@ class InspectionController extends Controller
         $inspection = Inspection::create([
             'inspection_no' => 'INS-' . date('Ym') . '-' . str_pad(Inspection::count() + 1, 4, '0', STR_PAD_LEFT),
             'extinguisher_id' => $request->extinguisher_id,
-            'inspected_by' => auth()->id() ?? 1,
+            'inspected_by' => auth()->id(),
             'inspected_at' => now(),
             'overall_result' => $overallResult,
             'remark' => $request->remark,

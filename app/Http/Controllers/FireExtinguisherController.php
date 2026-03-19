@@ -56,7 +56,7 @@ class FireExtinguisherController extends Controller
 
         $validated['asset_code'] = 'FE-' . strtoupper(Str::random(8));
         $validated['qr_code'] = Str::uuid()->toString();
-        $validated['created_by'] = auth()->id() ?? 1; // 1 for fallback if not logged in temp
+        $validated['created_by'] = auth()->id();
         $validated['expire_date'] = \Carbon\Carbon::parse($validated['manufacture_date'])->addYears(5);
         $validated['next_refill_date'] = \Carbon\Carbon::parse($validated['install_date'])->addMonths(6);
         $validated['model'] = '-'; // set default value instead of empty null
@@ -119,7 +119,8 @@ class FireExtinguisherController extends Controller
     public function bulkQr(Request $request)
     {
         $request->validate([
-            'ids' => 'required|array'
+            'ids' => 'required|array|max:100',
+            'ids.*' => 'required|integer|exists:fire_extinguishers,id',
         ]);
 
         $extinguishers = FireExtinguisher::whereIn('id', $request->ids)->with('location')->get();

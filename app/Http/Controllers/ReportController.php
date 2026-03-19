@@ -11,6 +11,96 @@ class ReportController extends Controller
         return view('reports.index');
     }
 
+    public function equipmentMonthly(Request $request)
+    {
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+        $type = $request->input('type', 'emergency_light');
+
+        $typeName = $type == 'emergency_light' ? 'ไฟฉุกเฉิน (Emergency Light)' : 'ที่ล้างตา/ฝักบัวฉุกเฉิน (Eyewash & Shower)';
+
+        $locationStats = \App\Models\Location::all();
+
+        foreach ($locationStats as $location) {
+            $location->equipment_count = \App\Models\SafetyEquipment::where('type', $type)
+                ->where('location_id', $location->id)
+                ->count();
+
+            $location->inspections_passed = \App\Models\EquipmentInspection::whereHas('equipment', function($q) use ($location, $type) {
+                $q->where('location_id', $location->id)->where('type', $type);
+            })->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'pass')
+              ->count();
+
+            $location->inspections_failed = \App\Models\EquipmentInspection::whereHas('equipment', function($q) use ($location, $type) {
+                $q->where('location_id', $location->id)->where('type', $type);
+            })->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'fail')
+              ->count();
+        }
+
+        // Filter out locations with no equipment
+        $locationStats = $locationStats->filter(fn($loc) => $loc->equipment_count > 0)->values();
+
+        return view('reports.equipment-monthly', compact('locationStats', 'month', 'year', 'type', 'typeName'));
+    }
+
+    public function equipmentAnnual(Request $request)
+    {
+        $year = $request->input('year', date('Y'));
+        $type = $request->input('type', 'emergency_light');
+
+        $typeName = $type == 'emergency_light' ? 'ไฟฉุกเฉิน (Emergency Light)' : 'ที่ล้างตา/ฝักบัวฉุกเฉิน (Eyewash & Shower)';
+
+        $locations = \App\Models\Location::all();
+        $annualData = [];
+
+        foreach ($locations as $location) {
+            $eqCount = \App\Models\SafetyEquipment::where('type', $type)
+                ->where('location_id', $location->id)->count();
+
+            if ($eqCount == 0) continue;
+
+            $monthlyStats = [];
+            $totalPassed = 0;
+            $totalFailed = 0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                $monthStart = \Carbon\Carbon::create($year, $m, 1)->startOfMonth();
+                $monthEnd = \Carbon\Carbon::create($year, $m, 1)->endOfMonth();
+
+                $baseQuery = \App\Models\EquipmentInspection::whereHas('equipment', function($q) use ($location, $type) {
+                    $q->where('location_id', $location->id)->where('type', $type);
+                })->whereBetween('inspected_at', [$monthStart, $monthEnd]);
+
+                $passedCount = (clone $baseQuery)->where('overall_result', 'pass')->count();
+                $failedCount = (clone $baseQuery)->where('overall_result', 'fail')->count();
+                $totalInspected = $passedCount + $failedCount;
+
+                $totalPassed += $passedCount;
+                $totalFailed += $failedCount;
+
+                $monthlyStats[$m] = [
+                    'passed' => $passedCount,
+                    'failed' => $failedCount,
+                    'total_inspected' => $totalInspected,
+                ];
+            }
+
+            $annualData[] = [
+                'location_name' => $location->location_name,
+                'equipment_count' => $eqCount,
+                'monthly_stats' => $monthlyStats,
+                'total_passed' => $totalPassed,
+                'total_failed' => $totalFailed,
+            ];
+        }
+
+        return view('reports.equipment-annual', compact('annualData', 'year', 'type', 'typeName'));
+    }
+
     public function monthly(Request $request)
     {
         $month = $request->input('month', date('m'));
@@ -93,6 +183,115 @@ class ReportController extends Controller
 
         return view('reports.annual', compact('annualData', 'year'));
     }
+
+    public function exportEquipmentMonthlyPdf(Request $request)
+    {
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+        $type = $request->input('type', 'emergency_light');
+
+        $typeName = $type == 'emergency_light' ? 'ไฟฉุกเฉิน' : 'ที่ล้างตา/ฝักบัวฉุกเฉิน';
+
+        $locationStats = \App\Models\Location::all();
+
+        foreach ($locationStats as $location) {
+            $location->equipment_count = \App\Models\SafetyEquipment::where('type', $type)
+                ->where('location_id', $location->id)->count();
+
+            $location->inspections_passed = \App\Models\EquipmentInspection::whereHas('equipment', function($q) use ($location, $type) {
+                $q->where('location_id', $location->id)->where('type', $type);
+            })->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'pass')
+              ->count();
+
+            $location->inspections_failed = \App\Models\EquipmentInspection::whereHas('equipment', function($q) use ($location, $type) {
+                $q->where('location_id', $location->id)->where('type', $type);
+            })->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'fail')
+              ->count();
+        }
+
+        $locationStats = $locationStats->filter(fn($loc) => $loc->equipment_count > 0)->values();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.equipment-monthly', compact('locationStats', 'month', 'year', 'type', 'typeName'))
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'THSarabunNew',
+                'chroot' => public_path('fonts'),
+                'fontDir' => public_path('fonts'),
+                'fontCache' => public_path('fonts')
+            ]);
+
+        $typeSlug = $type == 'emergency_light' ? 'ไฟฉุกเฉิน' : 'ที่ล้างตา';
+        return $pdf->download('รายงานตรวจเช็ค'.$typeSlug.'_เดือน'.$month.'_'.$year.'.pdf');
+    }
+
+    public function exportEquipmentAnnualPdf(Request $request)
+    {
+        $year = $request->input('year', date('Y'));
+        $type = $request->input('type', 'emergency_light');
+
+        $typeName = $type == 'emergency_light' ? 'ไฟฉุกเฉิน' : 'ที่ล้างตา/ฝักบัวฉุกเฉิน';
+
+        $locations = \App\Models\Location::all();
+        $annualData = [];
+
+        foreach ($locations as $location) {
+            $eqCount = \App\Models\SafetyEquipment::where('type', $type)
+                ->where('location_id', $location->id)->count();
+
+            if ($eqCount == 0) continue;
+
+            $monthlyStats = [];
+            $totalPassed = 0;
+            $totalFailed = 0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                $monthStart = \Carbon\Carbon::create($year, $m, 1)->startOfMonth();
+                $monthEnd = \Carbon\Carbon::create($year, $m, 1)->endOfMonth();
+
+                $baseQuery = \App\Models\EquipmentInspection::whereHas('equipment', function($q) use ($location, $type) {
+                    $q->where('location_id', $location->id)->where('type', $type);
+                })->whereBetween('inspected_at', [$monthStart, $monthEnd]);
+
+                $passedCount = (clone $baseQuery)->where('overall_result', 'pass')->count();
+                $failedCount = (clone $baseQuery)->where('overall_result', 'fail')->count();
+
+                $totalPassed += $passedCount;
+                $totalFailed += $failedCount;
+
+                $monthlyStats[$m] = [
+                    'passed' => $passedCount,
+                    'failed' => $failedCount,
+                    'total_inspected' => $passedCount + $failedCount,
+                ];
+            }
+
+            $annualData[] = [
+                'location_name' => $location->location_name,
+                'equipment_count' => $eqCount,
+                'monthly_stats' => $monthlyStats,
+                'total_passed' => $totalPassed,
+                'total_failed' => $totalFailed,
+            ];
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.equipment-annual', compact('annualData', 'year', 'type', 'typeName'))
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'THSarabunNew',
+                'chroot' => public_path('fonts'),
+                'fontDir' => public_path('fonts'),
+                'fontCache' => public_path('fonts')
+            ])
+            ->setPaper('a4', 'landscape');
+
+        $typeSlug = $type == 'emergency_light' ? 'ไฟฉุกเฉิน' : 'ที่ล้างตา';
+        return $pdf->download('รายงานตรวจเช็ค'.$typeSlug.'_ประจำปี'.$year.'.pdf');
+    }
+
 
     public function damageReport(Request $request)
     {
