@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page_title', 'รายงานสรุปการตรวจเช็ค' . $typeName . 'ประจำเดือน')
+@section('page_title', 'รายงานสรุปการตรวจเช็คเครื่องมือช่างประจำเดือน')
 
 @section('styles')
 <style>
@@ -23,14 +23,14 @@
     <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
         <div>
             <h5 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-{{ $type == 'emergency_light' ? 'lightbulb text-warning' : 'droplet text-info' }} me-2"></i>
-                {{ $typeName }} — เดือน {{ $month }} ปี {{ $year + 543 }}
+                <i class="bi bi-tools text-primary me-2"></i>
+                เครื่องมือช่าง — เดือน {{ $month }} ปี {{ $year + 543 }}
             </h5>
         </div>
         <div>
             <a href="{{ route('reports.index') }}" class="btn btn-light rounded-pill px-3 shadow-sm me-2 d-print-none"><i class="bi bi-arrow-left"></i> กลับ</a>
             <button type="button" onclick="window.print()" class="btn btn-secondary rounded-pill px-3 shadow-sm me-2 d-print-none"><i class="bi bi-printer"></i> พิมพ์หน้านี้</button>
-            <a href="{{ route('reports.export-equipment-monthly-pdf', ['month' => $month, 'year' => $year, 'type' => $type]) }}" class="btn btn-danger rounded-pill px-3 shadow-sm d-print-none"><i class="bi bi-file-pdf"></i> Export PDF</a>
+            <a href="{{ route('reports.export-tools-monthly-pdf', ['month' => $month, 'year' => $year]) }}" class="btn btn-danger rounded-pill px-3 shadow-sm d-print-none"><i class="bi bi-file-pdf"></i> Export PDF</a>
         </div>
     </div>
     <div class="card-body p-4 p-md-5">
@@ -47,14 +47,14 @@
             <div class="col-md-7">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <div class="p-4 bg-{{ $type == 'emergency_light' ? 'warning' : 'info' }} bg-opacity-10 text-{{ $type == 'emergency_light' ? 'warning' : 'info' }} rounded-4 text-center h-100">
-                            <i class="bi bi-{{ $type == 'emergency_light' ? 'lightbulb' : 'droplet' }} display-4 mb-2"></i>
-                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('equipment_count') }}</h2>
+                        <div class="p-4 bg-primary bg-opacity-10 text-primary rounded-4 text-center h-100">
+                            <i class="bi bi-tools display-4 mb-2"></i>
+                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('tool_count') }}</h2>
                             <small>อุปกรณ์ทั้งหมด (ชิ้น)</small>
                         </div>
                     </div>
                     <div class="col-sm-6">
-                        <div class="p-4 bg-primary bg-opacity-10 text-primary rounded-4 text-center h-100">
+                        <div class="p-4 bg-info bg-opacity-10 text-info rounded-4 text-center h-100">
                             <i class="bi bi-clipboard-check display-4 mb-2"></i>
                             @php
                                 $totalInspected = $locationStats->sum('inspections_passed') + $locationStats->sum('inspections_failed');
@@ -98,13 +98,13 @@
                     @forelse($locationStats as $index => $stat)
                         @php
                             $inspected = $stat->inspections_passed + $stat->inspections_failed;
-                            $uninspected = $stat->equipment_count - $inspected;
+                            $uninspected = $stat->tool_count - $inspected;
                             $uninspected = $uninspected < 0 ? 0 : $uninspected;
                         @endphp
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
                             <td class="fw-medium">{{ $stat->location_name }}</td>
-                            <td class="text-center">{{ $stat->equipment_count }}</td>
+                            <td class="text-center">{{ $stat->tool_count }}</td>
                             <td class="text-center text-success fw-bold">{{ $stat->inspections_passed }}</td>
                             <td class="text-center text-danger fw-bold">{{ $stat->inspections_failed }}</td>
                             <td class="text-center text-muted">{{ $uninspected }}</td>
@@ -127,7 +127,7 @@
     document.addEventListener("DOMContentLoaded", function() {
         const passed = {{ $locationStats->sum('inspections_passed') }};
         const failed = {{ $locationStats->sum('inspections_failed') }};
-        const total = {{ $locationStats->sum('equipment_count') }};
+        const total = {{ $locationStats->sum('tool_count') }};
         const uninspected = total - (passed + failed) > 0 ? total - (passed + failed) : 0;
 
         const ctx = document.getElementById('monthlyChart').getContext('2d');

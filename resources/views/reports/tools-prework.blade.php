@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page_title', 'รายงานสรุปการตรวจเช็ค' . $typeName . 'ประจำเดือน')
+@section('page_title', 'รายงานสรุปการตรวจเช็คก่อนใช้งาน (เครื่องมือช่าง)')
 
 @section('styles')
 <style>
@@ -23,14 +23,14 @@
     <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
         <div>
             <h5 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-{{ $type == 'emergency_light' ? 'lightbulb text-warning' : 'droplet text-info' }} me-2"></i>
-                {{ $typeName }} — เดือน {{ $month }} ปี {{ $year + 543 }}
+                <i class="bi bi-file-earmark-check text-secondary me-2"></i>
+                ตรวจเช็คก่อนใช้งาน (เครื่องมือช่าง) — เดือน {{ $month }} ปี {{ $year + 543 }}
             </h5>
         </div>
         <div>
             <a href="{{ route('reports.index') }}" class="btn btn-light rounded-pill px-3 shadow-sm me-2 d-print-none"><i class="bi bi-arrow-left"></i> กลับ</a>
             <button type="button" onclick="window.print()" class="btn btn-secondary rounded-pill px-3 shadow-sm me-2 d-print-none"><i class="bi bi-printer"></i> พิมพ์หน้านี้</button>
-            <a href="{{ route('reports.export-equipment-monthly-pdf', ['month' => $month, 'year' => $year, 'type' => $type]) }}" class="btn btn-danger rounded-pill px-3 shadow-sm d-print-none"><i class="bi bi-file-pdf"></i> Export PDF</a>
+            <a href="{{ route('reports.export-tools-prework-pdf', ['month' => $month, 'year' => $year]) }}" class="btn btn-danger rounded-pill px-3 shadow-sm d-print-none"><i class="bi bi-file-pdf"></i> Export PDF</a>
         </div>
     </div>
     <div class="card-body p-4 p-md-5">
@@ -39,7 +39,7 @@
             <div class="col-md-5">
                 <div class="card bg-light border-0 h-100 rounded-4">
                     <div class="card-body text-center p-4">
-                        <h6 class="fw-bold text-muted mb-4">สัดส่วนการตรวจเช็ค (ภาพรวม)</h6>
+                        <h6 class="fw-bold text-muted mb-4">สัดส่วนผลการประเมินความปลอดภัยก่อนใช้งาน</h6>
                         <canvas id="monthlyChart" style="max-height: 250px;"></canvas>
                     </div>
                 </div>
@@ -47,67 +47,65 @@
             <div class="col-md-7">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <div class="p-4 bg-{{ $type == 'emergency_light' ? 'warning' : 'info' }} bg-opacity-10 text-{{ $type == 'emergency_light' ? 'warning' : 'info' }} rounded-4 text-center h-100">
-                            <i class="bi bi-{{ $type == 'emergency_light' ? 'lightbulb' : 'droplet' }} display-4 mb-2"></i>
-                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('equipment_count') }}</h2>
+                        <div class="p-4 bg-primary bg-opacity-10 text-primary rounded-4 text-center h-100">
+                            <i class="bi bi-tools display-4 mb-2"></i>
+                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('tool_count') }}</h2>
                             <small>อุปกรณ์ทั้งหมด (ชิ้น)</small>
                         </div>
                     </div>
                     <div class="col-sm-6">
-                        <div class="p-4 bg-primary bg-opacity-10 text-primary rounded-4 text-center h-100">
-                            <i class="bi bi-clipboard-check display-4 mb-2"></i>
+                        <div class="p-4 bg-secondary bg-opacity-10 text-secondary rounded-4 text-center h-100">
+                            <i class="bi bi-ui-checks display-4 mb-2"></i>
                             @php
-                                $totalInspected = $locationStats->sum('inspections_passed') + $locationStats->sum('inspections_failed');
+                                $totalInspected = $locationStats->sum('prework_passed') + $locationStats->sum('prework_failed');
                             @endphp
                             <h2 class="fw-bold mb-0">{{ $totalInspected }}</h2>
-                            <small>ตรวจแล้วเดือนนี้ (ครั้ง)</small>
+                            <small>ประเมินก่อนใช้งานทั้งหมด (ครั้ง)</small>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="p-4 bg-success bg-opacity-10 text-success rounded-4 text-center h-100">
                             <i class="bi bi-check-circle display-4 mb-2"></i>
-                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('inspections_passed') }}</h2>
-                            <small>ผ่าน (ปกติ)</small>
+                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('prework_passed') }}</h2>
+                            <small>ผ่าน / ปลอดภัย (ครั้ง)</small>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="p-4 bg-danger bg-opacity-10 text-danger rounded-4 text-center h-100">
                             <i class="bi bi-x-circle display-4 mb-2"></i>
-                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('inspections_failed') }}</h2>
-                            <small>ไม่ผ่าน (ชำรุด)</small>
+                            <h2 class="fw-bold mb-0">{{ $locationStats->sum('prework_failed') }}</h2>
+                            <small>ไม่ผ่าน / พบชำรุด (ครั้ง)</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <h5 class="fw-bold mb-4"><i class="bi bi-table text-primary me-2"></i> สรุปข้อมูลแยกตามพื้นที่ติดตั้ง</h5>
+        <h5 class="fw-bold mb-4"><i class="bi bi-table text-secondary me-2"></i> สรุปข้อมูลแยกตามพื้นที่ติดตั้ง</h5>
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle">
                 <thead class="bg-light">
                     <tr>
                         <th class="py-3 text-center" width="5%">ลำดับ</th>
                         <th class="py-3">พื้นที่ติดตั้ง</th>
-                        <th class="py-3 text-center" width="15%">จำนวนอุปกรณ์</th>
-                        <th class="py-3 text-center" width="15%">ตรวจผ่าน (ปกติ)</th>
-                        <th class="py-3 text-center" width="15%">ตรวจไม่ผ่าน (ชำรุด)</th>
-                        <th class="py-3 text-center" width="15%">ยังไม่ได้ตรวจ</th>
+                        <th class="py-3 text-center" width="15%">จำนวนอุปกรณ์ (ชิ้น)</th>
+                        <th class="py-3 text-center" width="15%">ตรวจก่อนใช้งาน (ครั้ง)</th>
+                        <th class="py-3 text-center" width="15%">ปกติ (ครั้ง)</th>
+                        <th class="py-3 text-center" width="15%">พบชำรุด (ครั้ง)</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($locationStats as $index => $stat)
                         @php
-                            $inspected = $stat->inspections_passed + $stat->inspections_failed;
-                            $uninspected = $stat->equipment_count - $inspected;
-                            $uninspected = $uninspected < 0 ? 0 : $uninspected;
+                            $inspected = $stat->prework_passed + $stat->prework_failed;
                         @endphp
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
                             <td class="fw-medium">{{ $stat->location_name }}</td>
-                            <td class="text-center">{{ $stat->equipment_count }}</td>
-                            <td class="text-center text-success fw-bold">{{ $stat->inspections_passed }}</td>
-                            <td class="text-center text-danger fw-bold">{{ $stat->inspections_failed }}</td>
-                            <td class="text-center text-muted">{{ $uninspected }}</td>
+                            <td class="text-center">{{ $stat->tool_count }}</td>
+                            <td class="text-center fw-bold">{{ $inspected }}</td>
+                            <td class="text-center text-success fw-bold">{{ $stat->prework_passed }}</td>
+                            <td class="text-center text-danger fw-bold">{{ $stat->prework_failed }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -125,27 +123,25 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const passed = {{ $locationStats->sum('inspections_passed') }};
-        const failed = {{ $locationStats->sum('inspections_failed') }};
-        const total = {{ $locationStats->sum('equipment_count') }};
-        const uninspected = total - (passed + failed) > 0 ? total - (passed + failed) : 0;
+        const passed = {{ $locationStats->sum('prework_passed') }};
+        const failed = {{ $locationStats->sum('prework_failed') }};
+        const totalChecks = passed + failed;
 
         const ctx = document.getElementById('monthlyChart').getContext('2d');
         
-        if(total === 0 || (passed === 0 && failed === 0 && uninspected === 0)) {
+        if(totalChecks === 0) {
             return;
         }
 
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['ปกติ', 'ชำรุด', 'ยังไม่ได้ตรวจ'],
+                labels: ['ปกติ', 'พบชำรุด'],
                 datasets: [{
-                    data: [passed, failed, uninspected],
+                    data: [passed, failed],
                     backgroundColor: [
                         '#198754',
-                        '#dc3545',
-                        '#e9ecef'
+                        '#dc3545'
                     ],
                     borderWidth: 0
                 }]

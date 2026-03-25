@@ -101,6 +101,126 @@ class ReportController extends Controller
         return view('reports.equipment-annual', compact('annualData', 'year', 'type', 'typeName'));
     }
 
+    public function toolsMonthly(Request $request)
+    {
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+
+        $locationStats = \App\Models\Location::all();
+
+        foreach ($locationStats as $location) {
+            $location->tool_count = \App\Models\Tool::where('location_id', $location->id)
+                ->where('status', '!=', 'disposed')
+                ->count();
+
+            $location->inspections_passed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'monthly')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'pass')
+              ->count();
+
+            $location->inspections_failed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'monthly')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'fail')
+              ->count();
+        }
+
+        $locationStats = $locationStats->filter(fn($loc) => $loc->tool_count > 0)->values();
+
+        return view('reports.tools-monthly', compact('locationStats', 'month', 'year'));
+    }
+
+    public function toolsPreWork(Request $request)
+    {
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+
+        $locationStats = \App\Models\Location::all();
+
+        foreach ($locationStats as $location) {
+            $location->tool_count = \App\Models\Tool::where('location_id', $location->id)
+                ->where('status', '!=', 'disposed')
+                ->count();
+
+            $location->prework_passed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'pre_work')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'pass')
+              ->count();
+
+            $location->prework_failed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'pre_work')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'fail')
+              ->count();
+        }
+
+        $locationStats = $locationStats->filter(fn($loc) => $loc->tool_count > 0)->values();
+
+        return view('reports.tools-prework', compact('locationStats', 'month', 'year'));
+    }
+
+    public function toolsAnnual(Request $request)
+    {
+        $year = $request->input('year', date('Y'));
+
+        $locations = \App\Models\Location::all();
+        $annualData = [];
+
+        foreach ($locations as $location) {
+            $toolCount = \App\Models\Tool::where('location_id', $location->id)
+                ->where('status', '!=', 'disposed')
+                ->count();
+
+            if ($toolCount == 0) continue;
+
+            $monthlyStats = [];
+            $totalPassed = 0;
+            $totalFailed = 0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                $monthStart = \Carbon\Carbon::create($year, $m, 1)->startOfMonth();
+                $monthEnd = \Carbon\Carbon::create($year, $m, 1)->endOfMonth();
+
+                $baseQuery = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                    $q->where('location_id', $location->id);
+                })->where('inspection_type', 'monthly')->whereBetween('inspected_at', [$monthStart, $monthEnd]);
+
+                $passedCount = (clone $baseQuery)->where('overall_result', 'pass')->count();
+                $failedCount = (clone $baseQuery)->where('overall_result', 'fail')->count();
+                $totalInspected = $passedCount + $failedCount;
+
+                $totalPassed += $passedCount;
+                $totalFailed += $failedCount;
+
+                $monthlyStats[$m] = [
+                    'passed' => $passedCount,
+                    'failed' => $failedCount,
+                    'total_inspected' => $totalInspected,
+                ];
+            }
+
+            $annualData[] = [
+                'location_name' => $location->location_name,
+                'tool_count' => $toolCount,
+                'monthly_stats' => $monthlyStats,
+                'total_passed' => $totalPassed,
+                'total_failed' => $totalFailed,
+            ];
+        }
+
+        return view('reports.tools-annual', compact('annualData', 'year'));
+    }
+
     public function monthly(Request $request)
     {
         $month = $request->input('month', date('m'));
@@ -184,6 +304,60 @@ class ReportController extends Controller
         return view('reports.annual', compact('annualData', 'year'));
     }
 
+    public function exportAnnualPdf(Request $request)
+    {
+        $year = $request->input('year', date('Y'));
+
+        $locations = \App\Models\Location::with(['inspections' => function($query) use ($year) {
+            $query->whereYear('inspected_at', $year);
+        }])->get();
+
+        $annualData = [];
+
+        foreach ($locations as $location) {
+            $monthlyStats = [];
+            $totalPassed = 0;
+            $totalFailed = 0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                $monthInspections = $location->inspections->filter(function($inspection) use ($m) {
+                    return \Carbon\Carbon::parse($inspection->inspected_at)->month == $m;
+                });
+
+                $passedCount = $monthInspections->where('overall_result', 'pass')->count();
+                $failedCount = $monthInspections->where('overall_result', 'fail')->count();
+
+                $totalPassed += $passedCount;
+                $totalFailed += $failedCount;
+
+                $monthlyStats[$m] = [
+                    'passed' => $passedCount,
+                    'failed' => $failedCount,
+                    'total_inspected' => $monthInspections->count()
+                ];
+            }
+
+            $annualData[] = [
+                'location_name' => $location->location_name,
+                'monthly_stats' => $monthlyStats,
+                'total_passed' => $totalPassed,
+                'total_failed' => $totalFailed,
+            ];
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.annual', compact('annualData', 'year'))
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'THSarabunNew',
+                'chroot' => public_path(),
+                'fontDir' => public_path('fonts'),
+                'fontCache' => public_path('fonts')
+            ])
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('รายงานตรวจเช็คถังดับเพลิง_ประจำปี'.$year.'.pdf');
+    }
+
     public function exportEquipmentMonthlyPdf(Request $request)
     {
         $month = $request->input('month', date('m'));
@@ -219,10 +393,11 @@ class ReportController extends Controller
             ->setOptions([
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'THSarabunNew',
-                'chroot' => public_path('fonts'),
+                'chroot' => public_path(),
                 'fontDir' => public_path('fonts'),
                 'fontCache' => public_path('fonts')
-            ]);
+            ])
+            ->setPaper('a4', 'landscape');
 
         $typeSlug = $type == 'emergency_light' ? 'ไฟฉุกเฉิน' : 'ที่ล้างตา';
         return $pdf->download('รายงานตรวจเช็ค'.$typeSlug.'_เดือน'.$month.'_'.$year.'.pdf');
@@ -282,7 +457,7 @@ class ReportController extends Controller
             ->setOptions([
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'THSarabunNew',
-                'chroot' => public_path('fonts'),
+                'chroot' => public_path(),
                 'fontDir' => public_path('fonts'),
                 'fontCache' => public_path('fonts')
             ])
@@ -292,6 +467,156 @@ class ReportController extends Controller
         return $pdf->download('รายงานตรวจเช็ค'.$typeSlug.'_ประจำปี'.$year.'.pdf');
     }
 
+
+    public function exportToolsMonthlyPdf(Request $request)
+    {
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+
+        $locationStats = \App\Models\Location::all();
+
+        foreach ($locationStats as $location) {
+            $location->tool_count = \App\Models\Tool::where('location_id', $location->id)
+                ->where('status', '!=', 'disposed')
+                ->count();
+
+            $location->inspections_passed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'monthly')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'pass')
+              ->count();
+
+            $location->inspections_failed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'monthly')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'fail')
+              ->count();
+        }
+
+        $locationStats = $locationStats->filter(fn($loc) => $loc->tool_count > 0)->values();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.tools-monthly', compact('locationStats', 'month', 'year'))
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'THSarabunNew',
+                'chroot' => public_path(),
+                'fontDir' => public_path('fonts'),
+                'fontCache' => public_path('fonts')
+            ])
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('รายงานตรวจเช็คเครื่องมือช่าง_เดือน'.$month.'_'.$year.'.pdf');
+    }
+
+    public function exportToolsPreWorkPdf(Request $request)
+    {
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+
+        $locationStats = \App\Models\Location::all();
+
+        foreach ($locationStats as $location) {
+            $location->tool_count = \App\Models\Tool::where('location_id', $location->id)
+                ->where('status', '!=', 'disposed')
+                ->count();
+
+            $location->prework_passed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'pre_work')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'pass')
+              ->count();
+
+            $location->prework_failed = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                $q->where('location_id', $location->id);
+            })->where('inspection_type', 'pre_work')
+              ->whereMonth('inspected_at', $month)
+              ->whereYear('inspected_at', $year)
+              ->where('overall_result', 'fail')
+              ->count();
+        }
+
+        $locationStats = $locationStats->filter(fn($loc) => $loc->tool_count > 0)->values();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.tools-prework', compact('locationStats', 'month', 'year'))
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'THSarabunNew',
+                'chroot' => public_path(),
+                'fontDir' => public_path('fonts'),
+                'fontCache' => public_path('fonts')
+            ])
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('รายงานตรวจเช็คก่อนใช้งานเครื่องมือช่าง_เดือน'.$month.'_'.$year.'.pdf');
+    }
+
+    public function exportToolsAnnualPdf(Request $request)
+
+    {
+        $year = $request->input('year', date('Y'));
+
+        $locations = \App\Models\Location::all();
+        $annualData = [];
+
+        foreach ($locations as $location) {
+            $toolCount = \App\Models\Tool::where('location_id', $location->id)
+                ->where('status', '!=', 'disposed')
+                ->count();
+
+            if ($toolCount == 0) continue;
+
+            $monthlyStats = [];
+            $totalPassed = 0;
+            $totalFailed = 0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                $monthStart = \Carbon\Carbon::create($year, $m, 1)->startOfMonth();
+                $monthEnd = \Carbon\Carbon::create($year, $m, 1)->endOfMonth();
+
+                $baseQuery = \App\Models\ToolInspection::whereHas('tool', function($q) use ($location) {
+                    $q->where('location_id', $location->id);
+                })->where('inspection_type', 'monthly')->whereBetween('inspected_at', [$monthStart, $monthEnd]);
+
+                $passedCount = (clone $baseQuery)->where('overall_result', 'pass')->count();
+                $failedCount = (clone $baseQuery)->where('overall_result', 'fail')->count();
+
+                $totalPassed += $passedCount;
+                $totalFailed += $failedCount;
+
+                $monthlyStats[$m] = [
+                    'passed' => $passedCount,
+                    'failed' => $failedCount,
+                    'total_inspected' => $passedCount + $failedCount,
+                ];
+            }
+
+            $annualData[] = [
+                'location_name' => $location->location_name,
+                'tool_count' => $toolCount,
+                'monthly_stats' => $monthlyStats,
+                'total_passed' => $totalPassed,
+                'total_failed' => $totalFailed,
+            ];
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.tools-annual', compact('annualData', 'year'))
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'THSarabunNew',
+                'chroot' => public_path(),
+                'fontDir' => public_path('fonts'),
+                'fontCache' => public_path('fonts')
+            ])
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('รายงานตรวจเช็คเครื่องมือช่าง_ประจำปี'.$year.'.pdf');
+    }
 
     public function damageReport(Request $request)
     {
@@ -336,10 +661,11 @@ class ReportController extends Controller
             ->setOptions([
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'THSarabunNew',
-                'chroot' => public_path('fonts'),
+                'chroot' => public_path(),
                 'fontDir' => public_path('fonts'),
                 'fontCache' => public_path('fonts')
-            ]);
+            ])
+            ->setPaper('a4', 'landscape');
         
         return $pdf->download('รายงานแจ้งซ่อม_'.$start_month.'_ถึง_'.$end_month.'.pdf');
     }
@@ -373,10 +699,11 @@ class ReportController extends Controller
             ->setOptions([
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'THSarabunNew',
-                'chroot' => public_path('fonts'),
+                'chroot' => public_path(),
                 'fontDir' => public_path('fonts'),
                 'fontCache' => public_path('fonts')
-            ]);
+            ])
+            ->setPaper('a4', 'landscape');
         
         return $pdf->download('รายงานตรวจเช็คประจำเดือน_'.$month.'_'.$year.'.pdf');
     }

@@ -107,9 +107,8 @@
 
         <!-- Sidebar -->
         <nav class="sidebar flex-shrink-0 p-3" id="sidebar" style="width: 250px;">
-            <div class="nav-header d-flex align-items-center">
-                <i class="bi bi-fire text-danger fs-4 me-2"></i>
-                CFARM FEM System
+            <div class="nav-header d-flex align-items-center justify-content-center py-2 px-1">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="img-fluid" style="max-height: 55px;">
             </div>
             
             <ul class="nav flex-column mb-auto">
@@ -128,12 +127,12 @@
                 <!-- Map Layout -->
                 <li>
                     <a href="{{ route('map.index') }}" class="sidebar-link {{ request()->routeIs('map.*') ? 'active' : '' }}">
-                        <i class="bi bi-map"></i> แผนผัง (Layout)
+                        <i class="bi bi-map"></i> แผนผังถังดับเพลิง
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('inspections.index') }}" class="sidebar-link {{ request()->routeIs('inspections.*') ? 'active' : '' }}">
-                        <i class="bi bi-clipboard2-check"></i> ตรวจเช็ค (Inspections)
+                        <i class="bi bi-clipboard2-check"></i> ตรวจเช็คถังดับเพลิง
                     </a>
                 </li>
                 <li>
@@ -144,6 +143,11 @@
                 <li>
                     <a href="{{ route('safety-equipment.index', ['type' => 'eyewash_shower']) }}" class="sidebar-link {{ (request()->routeIs('safety-equipment.*') || request()->routeIs('equipment-inspections.*')) && request('type', '') == 'eyewash_shower' ? 'active' : '' }}">
                         <i class="bi bi-droplet"></i> จัดการที่ล้างตา/ฝักบัว
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('tools.index') }}" class="sidebar-link {{ (request()->routeIs('tools.*') || request()->routeIs('tool-inspections.*')) ? 'active' : '' }}">
+                        <i class="bi bi-wrench"></i> ตรวจสอบเครื่องมือช่าง
                     </a>
                 </li>
                 <li>
@@ -159,7 +163,7 @@
 
                 <!-- Admin Only -->
                 @if(auth()->check() && auth()->user()->role == 'admin')
-                <hr style="border-color: rgba(255,255,255,.2)">
+                <hr style="border-color: rgba(247, 246, 246, 0.2)">
                 <div class="text-uppercase text-muted px-3 mb-2" style="font-size: 0.75rem;">ผู้ดูแลระบบ</div>
                 <li>
                     <a href="{{ route('locations.index') }}" class="sidebar-link {{ request()->routeIs('locations.*') ? 'active' : '' }}">
@@ -174,6 +178,11 @@
                 <li>
                     <a href="{{ route('settings.index') }}" class="sidebar-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                         <i class="bi bi-gear"></i> ตั้งค่าระบบ
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('tool-types.index') }}" class="sidebar-link {{ request()->routeIs('tool-types.*') ? 'active' : '' }}">
+                        <i class="bi bi-tags"></i> จัดการประเภทเครื่องมือช่าง
                     </a>
                 </li>
                 <li>

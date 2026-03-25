@@ -23,6 +23,9 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SafetyEquipmentController;
 use App\Http\Controllers\EquipmentInspectionController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\ToolController;
+use App\Http\Controllers\ToolInspectionController;
+use App\Http\Controllers\ToolTypeController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -87,6 +90,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        // Tool Types Management
+        Route::resource('tool-types', ToolTypeController::class)->parameters(['tool-types' => 'toolType']);
+        Route::post('tool-types/{toolType}/checklist', [ToolTypeController::class, 'storeChecklistItem'])->name('tool-types.checklist.store');
+        Route::put('tool-types/{toolType}/checklist/{item}', [ToolTypeController::class, 'updateChecklistItem'])->name('tool-types.checklist.update');
+        Route::delete('tool-types/{toolType}/checklist/{item}', [ToolTypeController::class, 'destroyChecklistItem'])->name('tool-types.checklist.destroy');
     });
 
     // Admin Only (Manage Extinguishers)
@@ -105,20 +114,34 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('inspections', InspectionController::class)->only(['index', 'create', 'store', 'show']);
 
         Route::get('repair-logs', [RepairLogController::class, 'index'])->name('repair-logs.index');
-        Route::get('repair-logs/{repair_log}', [RepairLogController::class, 'show'])->name('repair-logs.show');
+        Route::get('repair-logs/{repair_log}', [RepairLogController::class, 'show'])
+            ->where('repair_log', '[0-9]+')
+            ->name('repair-logs.show');
 
         // Safety Equipment - View & Inspect only
         Route::get('scan-equipment/{qr_code}', [SafetyEquipmentController::class, 'scanQr'])->name('scan-equipment.qr');
-        Route::resource('safety-equipment', SafetyEquipmentController::class)->parameters(['safety-equipment' => 'safetyEquipment'])->only(['index', 'show']);
+        Route::resource('safety-equipment', SafetyEquipmentController::class)->parameters(['safety-equipment' => 'safetyEquipment'])->only(['index']);
         Route::resource('equipment-inspections', EquipmentInspectionController::class)->parameters(['equipment-inspections' => 'equipmentInspection'])->only(['index', 'create', 'store', 'show']);
+
+        // Tools - View & Inspect
+        Route::get('scan-tool/{qr_code}', [ToolController::class, 'scanQr'])->name('scan-tool.qr');
+        Route::resource('tools', ToolController::class)->only(['index']);
+        Route::resource('tool-inspections', ToolInspectionController::class)->parameters(['tool-inspections' => 'toolInspection'])->only(['index', 'create', 'store', 'show']);
 
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
         Route::get('reports/equipment-monthly', [ReportController::class, 'equipmentMonthly'])->name('reports.equipment-monthly');
         Route::get('reports/equipment-annual', [ReportController::class, 'equipmentAnnual'])->name('reports.equipment-annual');
+        Route::get('reports/tools-monthly', [ReportController::class, 'toolsMonthly'])->name('reports.tools-monthly');
+        Route::get('reports/tools-prework', [ReportController::class, 'toolsPreWork'])->name('reports.tools-prework');
+        Route::get('reports/tools-annual', [ReportController::class, 'toolsAnnual'])->name('reports.tools-annual');
         Route::get('reports/export-equipment-monthly-pdf', [ReportController::class, 'exportEquipmentMonthlyPdf'])->name('reports.export-equipment-monthly-pdf');
         Route::get('reports/export-equipment-annual-pdf', [ReportController::class, 'exportEquipmentAnnualPdf'])->name('reports.export-equipment-annual-pdf');
+        Route::get('reports/export-tools-monthly-pdf', [ReportController::class, 'exportToolsMonthlyPdf'])->name('reports.export-tools-monthly-pdf');
+        Route::get('reports/export-tools-prework-pdf', [ReportController::class, 'exportToolsPreWorkPdf'])->name('reports.export-tools-prework-pdf');
+        Route::get('reports/export-tools-annual-pdf', [ReportController::class, 'exportToolsAnnualPdf'])->name('reports.export-tools-annual-pdf');
         Route::get('reports/annual', [ReportController::class, 'annual'])->name('reports.annual');
+        Route::get('reports/export-annual-pdf', [ReportController::class, 'exportAnnualPdf'])->name('reports.export-annual-pdf');
         Route::get('reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
         Route::get('reports/export-monthly-pdf', [ReportController::class, 'exportMonthlyPdf'])->name('reports.export-monthly-pdf');
         Route::get('reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
@@ -142,7 +165,12 @@ Route::middleware(['auth'])->group(function () {
         // Safety Equipment - CRUD for admin/safety_officer
         Route::get('safety-equipment/{safetyEquipment}/qr', [SafetyEquipmentController::class, 'printQr'])->name('safety-equipment.qr');
         Route::post('safety-equipment/bulk-qr', [SafetyEquipmentController::class, 'bulkQr'])->name('safety-equipment.bulk-qr');
-        Route::resource('safety-equipment', SafetyEquipmentController::class)->parameters(['safety-equipment' => 'safetyEquipment'])->only(['create', 'store', 'edit', 'update', 'destroy']);
+        Route::resource('safety-equipment', SafetyEquipmentController::class)->parameters(['safety-equipment' => 'safetyEquipment'])->only(['create', 'store', 'edit', 'update', 'destroy', 'show']);
+
+        // Tools - CRUD for admin/safety_officer
+        Route::get('tools/{tool}/qr', [ToolController::class, 'printQr'])->name('tools.qr');
+        Route::post('tools/bulk-qr', [ToolController::class, 'bulkQr'])->name('tools.bulk-qr');
+        Route::resource('tools', ToolController::class)->only(['create', 'store', 'edit', 'update', 'destroy', 'show']);
 
         // MAP - Pin management for admin/safety_officer
         Route::post('map/pin', [\App\Http\Controllers\MapController::class, 'savePin'])->name('map.save-pin');

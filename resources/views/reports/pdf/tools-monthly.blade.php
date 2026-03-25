@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>รายงานสรุปการตรวจเช็ค{{ $typeName }}ประจำเดือน</title>
+    <title>รายงานสรุปการตรวจเช็คเครื่องมือช่างประจำเดือน</title>
     <style>
         @font-face {
             font-family: 'THSarabunNew';
@@ -46,7 +46,7 @@
 <body>
     <div class="header text-center" style="margin-bottom: 25px; border-bottom: 2px solid #333; padding-bottom: 10px;">
         <img src="{{ str_replace('\\', '/', public_path('images/logo.png')) }}" style="height: 70px; margin-bottom: 10px;">
-        <h2 style="margin: 0;">รายงานสรุปผลการตรวจเช็ค{{ $typeName }}ประจำเดือน</h2>
+        <h2 style="margin: 0;">รายงานสรุปผลการตรวจเช็คเครื่องมือช่างประจำเดือน</h2>
         <p style="margin: 5px 0;">
             ประจำเดือน: {{ \Carbon\Carbon::create()->month((int)$month)->translatedFormat('F') }} 
             ปี: {{ $year + 543 }}
@@ -56,7 +56,7 @@
     <div style="margin-bottom: 20px;">
         <span class="font-bold">สรุปข้อมูลภาพรวม:</span>
         @php
-            $totalEquipment = $locationStats->sum('equipment_count');
+            $totalEquipment = $locationStats->sum('tool_count');
             $totalPassed = $locationStats->sum('inspections_passed');
             $totalFailed = $locationStats->sum('inspections_failed');
             $totalInspected = $totalPassed + $totalFailed;
@@ -89,19 +89,19 @@
             @forelse($locationStats as $index => $loc)
                 @php
                     $inspected = $loc->inspections_passed + $loc->inspections_failed;
-                    $uninspected = $loc->equipment_count - $inspected;
+                    $uninspected = $loc->tool_count - $inspected;
                     $uninspected = $uninspected < 0 ? 0 : $uninspected;
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $loc->location_name }}</td>
-                    <td class="text-center">{{ $loc->equipment_count }}</td>
+                    <td class="text-center">{{ $loc->tool_count }}</td>
                     <td class="text-center">{{ $loc->inspections_passed }}</td>
                     <td class="text-center">{{ $loc->inspections_failed }}</td>
                     <td class="text-center">{{ $uninspected }}</td>
                 </tr>
                 @php
-                    $sumTotal += $loc->equipment_count;
+                    $sumTotal += $loc->tool_count;
                     $sumPassed += $loc->inspections_passed;
                     $sumFailed += $loc->inspections_failed;
                     $sumUninspected += $uninspected;

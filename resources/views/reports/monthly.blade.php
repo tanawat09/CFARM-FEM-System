@@ -16,6 +16,9 @@
 @endsection
 
 @section('content')
+<div class="d-none d-print-block text-center mb-4">
+    <img src="{{ asset('images/logo.png') }}" alt="Logo" style="height: 100px;">
+</div>
 <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
         <div>

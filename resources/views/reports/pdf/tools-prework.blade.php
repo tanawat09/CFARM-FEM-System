@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>รายงานสรุปการตรวจเช็ค{{ $typeName }}ประจำเดือน</title>
+    <title>รายงานสรุปการตรวจเช็คก่อนใช้งานเครื่องมือช่าง</title>
     <style>
         @font-face {
             font-family: 'THSarabunNew';
@@ -46,7 +46,7 @@
 <body>
     <div class="header text-center" style="margin-bottom: 25px; border-bottom: 2px solid #333; padding-bottom: 10px;">
         <img src="{{ str_replace('\\', '/', public_path('images/logo.png')) }}" style="height: 70px; margin-bottom: 10px;">
-        <h2 style="margin: 0;">รายงานสรุปผลการตรวจเช็ค{{ $typeName }}ประจำเดือน</h2>
+        <h2 style="margin: 0;">รายงานสรุปผลการประเมินความปลอดภัยก่อนใช้งาน (เครื่องมือช่าง)</h2>
         <p style="margin: 5px 0;">
             ประจำเดือน: {{ \Carbon\Carbon::create()->month((int)$month)->translatedFormat('F') }} 
             ปี: {{ $year + 543 }}
@@ -56,16 +56,15 @@
     <div style="margin-bottom: 20px;">
         <span class="font-bold">สรุปข้อมูลภาพรวม:</span>
         @php
-            $totalEquipment = $locationStats->sum('equipment_count');
-            $totalPassed = $locationStats->sum('inspections_passed');
-            $totalFailed = $locationStats->sum('inspections_failed');
+            $totalEquipment = $locationStats->sum('tool_count');
+            $totalPassed = $locationStats->sum('prework_passed');
+            $totalFailed = $locationStats->sum('prework_failed');
             $totalInspected = $totalPassed + $totalFailed;
-            $totalUninspected = $totalEquipment - $totalInspected > 0 ? $totalEquipment - $totalInspected : 0;
         @endphp
         อุปกรณ์ทั้งหมด: {{ $totalEquipment }} ชิ้น | 
-        ตรวจผ่าน (ปกติ): <span style="color: green;">{{ $totalPassed }} ครั้ง</span> | 
-        ตรวจไม่ผ่าน (ชำรุด): <span style="color: red;">{{ $totalFailed }} ครั้ง</span> | 
-        ยังไม่ได้ตรวจ: <span style="color: gray;">{{ $totalUninspected }} ชิ้น</span>
+        ประเมินก่อนใช้งานทั้งหมด: {{ $totalInspected }} ครั้ง | 
+        ผ่าน / ปลอดภัย: <span style="color: green;">{{ $totalPassed }} ครั้ง</span> | 
+        ไม่ผ่าน / พบชำรุด: <span style="color: red;">{{ $totalFailed }} ครั้ง</span>
     </div>
 
     <table>
@@ -73,38 +72,36 @@
             <tr>
                 <th class="text-center" width="10%">ลำดับ</th>
                 <th width="30%">สถานที่/พื้นที่ติดตั้ง</th>
-                <th class="text-center" width="15%">จำนวนอุปกรณ์</th>
-                <th class="text-center" width="15%" style="color: green;">ผ่านการตรวจ</th>
-                <th class="text-center" width="15%" style="color: red;">ไม่ผ่าน/ชำรุด</th>
-                <th class="text-center" width="15%" style="color: gray;">ยังไม่ได้ตรวจ</th>
+                <th class="text-center" width="15%">อุปกรณ์ (ชิ้น)</th>
+                <th class="text-center" width="15%">ตรวจก่อนใช้งาน (ครั้ง)</th>
+                <th class="text-center" width="15%" style="color: green;">ปกติ (ครั้ง)</th>
+                <th class="text-center" width="15%" style="color: red;">พบชำรุด (ครั้ง)</th>
             </tr>
         </thead>
         <tbody>
             @php 
                 $sumTotal = 0; 
+                $sumInspected = 0;
                 $sumPassed = 0; 
                 $sumFailed = 0; 
-                $sumUninspected = 0;
             @endphp
             @forelse($locationStats as $index => $loc)
                 @php
-                    $inspected = $loc->inspections_passed + $loc->inspections_failed;
-                    $uninspected = $loc->equipment_count - $inspected;
-                    $uninspected = $uninspected < 0 ? 0 : $uninspected;
+                    $inspected = $loc->prework_passed + $loc->prework_failed;
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $loc->location_name }}</td>
-                    <td class="text-center">{{ $loc->equipment_count }}</td>
-                    <td class="text-center">{{ $loc->inspections_passed }}</td>
-                    <td class="text-center">{{ $loc->inspections_failed }}</td>
-                    <td class="text-center">{{ $uninspected }}</td>
+                    <td class="text-center">{{ $loc->tool_count }}</td>
+                    <td class="text-center font-bold">{{ $inspected }}</td>
+                    <td class="text-center" style="color: green;">{{ $loc->prework_passed }}</td>
+                    <td class="text-center" style="color: red;">{{ $loc->prework_failed }}</td>
                 </tr>
                 @php
-                    $sumTotal += $loc->equipment_count;
-                    $sumPassed += $loc->inspections_passed;
-                    $sumFailed += $loc->inspections_failed;
-                    $sumUninspected += $uninspected;
+                    $sumTotal += $loc->tool_count;
+                    $sumInspected += $inspected;
+                    $sumPassed += $loc->prework_passed;
+                    $sumFailed += $loc->prework_failed;
                 @endphp
             @empty
                 <tr>
@@ -116,9 +113,9 @@
             <tr style="background-color: #f9f9f9; font-weight: bold;">
                 <td colspan="2" class="text-right">รวมทั้งหมด</td>
                 <td class="text-center">{{ $sumTotal }}</td>
+                <td class="text-center">{{ $sumInspected }}</td>
                 <td class="text-center" style="color: green;">{{ $sumPassed }}</td>
                 <td class="text-center" style="color: red;">{{ $sumFailed }}</td>
-                <td class="text-center" style="color: gray;">{{ $sumUninspected }}</td>
             </tr>
         </tfoot>
     </table>

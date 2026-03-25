@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>รายงานสรุปการตรวจเช็ค{{ $typeName }}ประจำปี {{ $year + 543 }}</title>
+    <title>รายงานสรุปการตรวจเช็คเครื่องมือช่างประจำปี {{ $year + 543 }}</title>
     <style>
         @font-face {
             font-family: 'THSarabunNew';
@@ -53,14 +53,14 @@
 <body>
     <div class="header text-center" style="margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px;">
         <img src="{{ str_replace('\\', '/', public_path('images/logo.png')) }}" style="height: 56px; margin-bottom: 5px;">
-        <h2 style="margin: 0;">รายงานสรุปผลการตรวจเช็ค{{ $typeName }}ประจำปี</h2>
+        <h2 style="margin: 0;">รายงานสรุปผลการตรวจเช็คเครื่องมือช่างประจำปี</h2>
         <p style="margin: 5px 0;">ประจำปี {{ $year + 543 }}</p>
     </div>
 
     <div style="margin-bottom: 15px;">
         <span class="font-bold">สรุปภาพรวม:</span>
         @php
-            $grandEquipment = collect($annualData)->sum('equipment_count');
+            $grandEquipment = collect($annualData)->sum('tool_count');
             $grandPassed = collect($annualData)->sum('total_passed');
             $grandFailed = collect($annualData)->sum('total_failed');
         @endphp
@@ -90,7 +90,7 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td style="text-align: left;">{{ $data['location_name'] }}</td>
-                    <td>{{ $data['equipment_count'] }}</td>
+                    <td>{{ $data['tool_count'] }}</td>
                     @for($m = 1; $m <= 12; $m++)
                         @php $stats = $data['monthly_stats'][$m]; @endphp
                         <td>

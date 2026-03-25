@@ -210,6 +210,72 @@
         </div>
     </div>
 </div>
+
+<!-- Tools -->
+<h6 class="fw-bold text-muted mb-3"><i class="bi bi-tools text-primary me-2"></i> เครื่องมือช่าง (Tools)</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-primary border-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-tools fs-3 text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ทั้งหมด</h6>
+                        <h3 class="fw-bold mb-0">{{ $toolTotal ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-check-circle fs-3 text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">พร้อมใช้งาน</h6>
+                        <h3 class="fw-bold mb-0 text-success">{{ $toolActive ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-warning bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-wrench-adjustable fs-3 text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ชำรุด / ไม่ใช้งาน</h6>
+                        <h3 class="fw-bold mb-0 text-warning">{{ $toolDamage ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-clipboard-check fs-3 text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">ตรวจเดือนนี้ (ประจำเดือน)</h6>
+                        <h3 class="fw-bold mb-0 text-info">{{ $toolInspectedThisMonth ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-3">
     <!-- Chart Section (Dummpy placeholder for now) -->
     <div class="col-12 col-lg-8">

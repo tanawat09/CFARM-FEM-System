@@ -8,6 +8,8 @@ use App\Models\Inspection;
 use App\Models\RepairLog;
 use App\Models\SafetyEquipment;
 use App\Models\EquipmentInspection;
+use App\Models\Tool;
+use App\Models\ToolInspection;
 
 class DashboardController extends Controller
 {
@@ -114,6 +116,21 @@ class DashboardController extends Controller
             }
         })->whereMonth('inspected_at', now()->month)->whereYear('inspected_at', now()->year)->count();
 
+        // Tools Stats
+        $toolsQuery = Tool::query();
+        if ($selectedLocation) {
+            $toolsQuery->whereHas('location', fn($q) => $q->where('location_name', $selectedLocation));
+        }
+
+        $toolTotal = (clone $toolsQuery)->where('status', '!=', 'disposed')->count();
+        $toolActive = (clone $toolsQuery)->where('status', 'active')->count();
+        $toolDamage = (clone $toolsQuery)->whereIn('status', ['under_repair', 'inactive'])->count();
+        $toolInspectedThisMonth = ToolInspection::whereHas('tool', function($q) use ($selectedLocation) {
+            if ($selectedLocation) {
+                $q->whereHas('location', fn($q2) => $q2->where('location_name', $selectedLocation));
+            }
+        })->where('inspection_type', 'monthly')->whereMonth('inspected_at', now()->month)->whereYear('inspected_at', now()->year)->count();
+
         return view('dashboard.index', compact(
             'totalExtinguishers',
             'activeExtinguishers',
@@ -126,7 +143,8 @@ class DashboardController extends Controller
             'selectedLocation',
             'chartData',
             'elTotal', 'elActive', 'elDamage', 'elInspectedThisMonth',
-            'ewTotal', 'ewActive', 'ewDamage', 'ewInspectedThisMonth'
+            'ewTotal', 'ewActive', 'ewDamage', 'ewInspectedThisMonth',
+            'toolTotal', 'toolActive', 'toolDamage', 'toolInspectedThisMonth'
         ));
     }
 }

@@ -18,7 +18,7 @@
         }
         body {
             font-family: 'THSarabunNew', sans-serif;
-            font-size: 16px;
+            font-size: 11px;
             color: #333;
             line-height: 1.2;
         }
@@ -44,9 +44,10 @@
     </style>
 </head>
 <body>
-    <div class="header text-center">
-        <h2>รายงานสรุปผลการตรวจสอบถังดับเพลิงประจำเดือน</h2>
-        <p>
+    <div class="header text-center" style="margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+        <img src="{{ str_replace('\\', '/', public_path('images/logo.png')) }}" style="height: 70px; margin-bottom: 10px;">
+        <h2 style="margin: 0;">รายงานสรุปผลการตรวจสอบถังดับเพลิงประจำเดือน</h2>
+        <p style="margin: 5px 0;">
             ประจำเดือน: {{ \Carbon\Carbon::create()->month((int)$month)->translatedFormat('F') }} 
             ปี: {{ $year + 543 }}
         </p>

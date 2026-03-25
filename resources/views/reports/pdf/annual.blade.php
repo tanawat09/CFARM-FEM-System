@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>รายงานสรุปการตรวจเช็ค{{ $typeName }}ประจำปี {{ $year + 543 }}</title>
+    <title>รายงานสรุปการตรวจเช็คถังดับเพลิงประจำปี {{ $year + 543 }}</title>
     <style>
         @font-face {
             font-family: 'THSarabunNew';
@@ -53,18 +53,16 @@
 <body>
     <div class="header text-center" style="margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px;">
         <img src="{{ str_replace('\\', '/', public_path('images/logo.png')) }}" style="height: 56px; margin-bottom: 5px;">
-        <h2 style="margin: 0;">รายงานสรุปผลการตรวจเช็ค{{ $typeName }}ประจำปี</h2>
+        <h2 style="margin: 0;">รายงานสรุปผลการตรวจเช็คถังดับเพลิงประจำปี</h2>
         <p style="margin: 5px 0;">ประจำปี {{ $year + 543 }}</p>
     </div>
 
     <div style="margin-bottom: 15px;">
         <span class="font-bold">สรุปภาพรวม:</span>
         @php
-            $grandEquipment = collect($annualData)->sum('equipment_count');
             $grandPassed = collect($annualData)->sum('total_passed');
             $grandFailed = collect($annualData)->sum('total_failed');
         @endphp
-        อุปกรณ์ทั้งหมด: {{ $grandEquipment }} ชิ้น | 
         ผ่านทั้งปี: <span class="pass">{{ $grandPassed }}</span> | 
         ไม่ผ่านทั้งปี: <span class="fail">{{ $grandFailed }}</span>
     </div>
@@ -73,8 +71,7 @@
         <thead>
             <tr>
                 <th rowspan="2" width="4%">ลำดับ</th>
-                <th rowspan="2" width="14%">สถานที่</th>
-                <th rowspan="2" width="5%">อุปกรณ์</th>
+                <th rowspan="2" width="16%">สถานที่ติดตั้ง</th>
                 <th colspan="12">ผลการตรวจสอบ ({{ $year + 543 }})</th>
                 <th rowspan="2" width="5%">รวมผ่าน</th>
                 <th rowspan="2" width="5%">รวมไม่ผ่าน</th>
@@ -90,7 +87,6 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td style="text-align: left;">{{ $data['location_name'] }}</td>
-                    <td>{{ $data['equipment_count'] }}</td>
                     @for($m = 1; $m <= 12; $m++)
                         @php $stats = $data['monthly_stats'][$m]; @endphp
                         <td>
@@ -108,7 +104,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="17">ไม่พบข้อมูลอุปกรณ์ในระบบประจำปี {{ $year + 543 }}</td>
+                    <td colspan="16">ไม่พบข้อมูลในระบบประจำปี {{ $year + 543 }}</td>
                 </tr>
             @endforelse
         </tbody>
