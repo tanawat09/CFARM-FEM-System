@@ -6,9 +6,49 @@ use App\Models\Inspection;
 use App\Models\FireExtinguisher;
 use App\Models\InspectionItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class InspectionController extends Controller
 {
+    private function getChecklist(): array
+    {
+        return [
+            ['code' => 'CHK-001', 'category' => 'ความดัน', 'item' => 'เข็มความดันอยู่ในเกณฑ์มาตรฐาน (สีเขียว)'],
+            ['code' => 'CHK-002', 'category' => 'สายและหัวฉีด', 'item' => 'สายฉีดไม่แตกหรือรั่ว'],
+            ['code' => 'CHK-004', 'category' => 'ตัวถัง', 'item' => 'ตัวถังไม่มีสนิมหรือบุบแตก'],
+            ['code' => 'CHK-008', 'category' => 'ความปลอดภัยในการใช้งาน', 'item' => 'ไม่มีสิ่งกีดขวางการเข้าถึง'],
+            ['code' => 'CHK-012', 'category' => 'ซีลและสลักนิรภัย', 'item' => 'สลักนิรภัย (Pin) ครบและปลอดภัย'],
+        ];
+    }
+
+    private function validateResults(array $results, array $allowedCodes): void
+    {
+        $submittedCodes = array_keys($results);
+        sort($submittedCodes);
+        sort($allowedCodes);
+
+        if ($submittedCodes !== $allowedCodes) {
+            throw ValidationException::withMessages([
+                'results' => 'ข้อมูลรายการตรวจไม่ถูกต้อง กรุณาโหลดหน้าแบบฟอร์มใหม่แล้วลองอีกครั้ง',
+            ]);
+        }
+
+        foreach ($results as $code => $result) {
+            if (!in_array($result, ['ok', 'not_ok', 'na'], true)) {
+                throw ValidationException::withMessages([
+                    "results.$code" => 'ค่าผลการตรวจไม่ถูกต้อง',
+                ]);
+            }
+        }
+    }
+
+    private function generateInspectionNo(): string
+    {
+        return 'INS-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
+    }
+
     public function index(Request $request)
     {
         $query = Inspection::with(['fireExtinguisher.location', 'inspectedBy']);
@@ -72,29 +112,26 @@ class InspectionController extends Controller
         if ($alreadyInspected) {
             return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้ได้รับการตรวจเช็คแล้วในเดือนนี้ (1 ถังตรวจได้ 1 ครั้ง/เดือน)');
         }
-        
-        // This would typically load the standard checklist from DB or config
-        $checklist = [
-            ['code' => 'CHK-001', 'category' => 'ความดัน', 'item' => 'เข็มความดันอยู่ในเกณฑ์มาตรฐาน (สีเขียว)'],
-            ['code' => 'CHK-002', 'category' => 'สายและหัวฉีด', 'item' => 'สายฉีดไม่แตกหรือรั่ว'],
-            ['code' => 'CHK-004', 'category' => 'ตัวถัง', 'item' => 'ตัวถังไม่มีสนิมหรือบุบแตก'],
-            ['code' => 'CHK-008', 'category' => 'ความปลอดภัยในการใช้งาน', 'item' => 'ไม่มีสิ่งกีดขวางการเข้าถึง'],
-            ['code' => 'CHK-012', 'category' => 'ซีลและสลักนิรภัย', 'item' => 'สลักนิรภัย (Pin) ครบและปลอดภัย'],
-        ];
+
+        $checklist = $this->getChecklist();
 
         return view('inspections.create', compact('extinguisher', 'checklist'));
     }
 
     public function store(Request $request)
     {
-        // Add robust validation as needed
-        $request->validate([
+        $validated = $request->validate([
             'extinguisher_id' => 'required|exists:fire_extinguishers,id',
             'results' => 'required|array',
+            'remark' => 'nullable|string|max:1000',
+            'weather_condition' => 'nullable|string|max:255',
         ]);
-        
+
+        $checklist = collect($this->getChecklist())->keyBy('code');
+        $this->validateResults($validated['results'], $checklist->keys()->all());
+
         // Check if already inspected this month to prevent bypassing via direct POST
-        $alreadyInspected = Inspection::where('extinguisher_id', $request->extinguisher_id)
+        $alreadyInspected = Inspection::where('extinguisher_id', $validated['extinguisher_id'])
             ->whereMonth('inspected_at', now()->month)
             ->whereYear('inspected_at', now()->year)
             ->exists();
@@ -102,47 +139,50 @@ class InspectionController extends Controller
         if ($alreadyInspected) {
             return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้ได้รับการตรวจเช็คแล้วในเดือนนี้ ไม่สามารถบันทึกซ้ำได้');
         }
-        
-        $results = $request->input('results'); // array of item_code => result
+
+        $results = $validated['results'];
         $overallResult = in_array('not_ok', array_values($results)) ? 'fail' : 'pass';
 
-        $inspection = Inspection::create([
-            'inspection_no' => 'INS-' . date('Ym') . '-' . str_pad(Inspection::count() + 1, 4, '0', STR_PAD_LEFT),
-            'extinguisher_id' => $request->extinguisher_id,
-            'inspected_by' => auth()->id(),
-            'inspected_at' => now(),
-            'overall_result' => $overallResult,
-            'remark' => $request->remark,
-            'next_inspection_date' => now()->addDays(30),
-            'is_draft' => false,
-            'weather_condition' => $request->weather_condition,
-        ]);
+        $extinguisher = DB::transaction(function () use ($validated, $results, $checklist, $overallResult) {
+            $inspection = Inspection::create([
+                'inspection_no' => $this->generateInspectionNo(),
+                'extinguisher_id' => $validated['extinguisher_id'],
+                'inspected_by' => auth()->id(),
+                'inspected_at' => now(),
+                'overall_result' => $overallResult,
+                'remark' => $validated['remark'] ?? null,
+                'next_inspection_date' => now()->addDays(30),
+                'is_draft' => false,
+                'weather_condition' => $validated['weather_condition'] ?? null,
+            ]);
 
-        $itemsToInsert = [];
-        $now = now();
-        foreach ($results as $code => $result) {
-            $itemsToInsert[] = [
-                'inspection_id' => $inspection->id,
-                'item_code' => $code,
-                'item_name' => collect($request->items)->firstWhere('code', $code)['item'] ?? 'Unknown',
-                'category' => 'General',
-                'result' => $result,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }
-        InspectionItem::insert($itemsToInsert);
-        
-        $extinguisher = FireExtinguisher::find($request->extinguisher_id);
-        $extinguisher->next_inspection_date = now()->addDays(30);
-        
-        if ($overallResult === 'fail') {
-            $extinguisher->status = 'damage'; // Or under_repair depending on flow map
-            // Here you'd likely trigger an event or queue job to create a repair log automatically 
-            // and notify safety officers etc.
-        }
-        
-        $extinguisher->save();
+            $itemsToInsert = [];
+            $now = now();
+            foreach ($results as $code => $result) {
+                $item = $checklist->get($code);
+                $itemsToInsert[] = [
+                    'inspection_id' => $inspection->id,
+                    'item_code' => $code,
+                    'item_name' => $item['item'],
+                    'category' => $item['category'],
+                    'result' => $result,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            InspectionItem::insert($itemsToInsert);
+
+            $extinguisher = FireExtinguisher::findOrFail($validated['extinguisher_id']);
+            $extinguisher->next_inspection_date = now()->addDays(30);
+
+            if ($overallResult === 'fail') {
+                $extinguisher->status = 'damage';
+            }
+
+            $extinguisher->save();
+
+            return $extinguisher;
+        });
 
         if ($overallResult === 'fail') {
              return redirect()->route('repair-logs.create', ['extinguisher_id' => $extinguisher->id])

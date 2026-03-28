@@ -8,6 +8,9 @@ use App\Models\ToolInspectionItem;
 use App\Models\ToolType;
 use App\Models\ToolChecklistItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ToolInspectionController extends Controller
 {
@@ -25,6 +28,32 @@ class ToolInspectionController extends Controller
                 'item' => $item->item_name,
             ];
         })->toArray();
+    }
+
+    private function validateResults(array $results, array $allowedCodes): void
+    {
+        $submittedCodes = array_keys($results);
+        sort($submittedCodes);
+        sort($allowedCodes);
+
+        if ($submittedCodes !== $allowedCodes) {
+            throw ValidationException::withMessages([
+                'results' => 'ข้อมูลรายการตรวจไม่ถูกต้อง กรุณาโหลดหน้าแบบฟอร์มใหม่แล้วลองอีกครั้ง',
+            ]);
+        }
+
+        foreach ($results as $code => $result) {
+            if (!in_array($result, ['ok', 'not_ok', 'na'], true)) {
+                throw ValidationException::withMessages([
+                    "results.$code" => 'ค่าผลการตรวจไม่ถูกต้อง',
+                ]);
+            }
+        }
+    }
+
+    private function generateInspectionNo(string $prefix): string
+    {
+        return $prefix . '-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
     }
 
     public function index(Request $request)
@@ -77,55 +106,61 @@ class ToolInspectionController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'tool_id' => 'required|exists:tools,id',
             'inspection_type' => 'required|in:monthly,pre_work',
             'results' => 'required|array',
+            'remark' => 'nullable|string|max:1000',
         ]);
 
-        $results = $request->input('results');
+        $tool = Tool::findOrFail($validated['tool_id']);
+        $checklist = collect($this->getChecklist($tool->type))->keyBy('code');
+        $this->validateResults($validated['results'], $checklist->keys()->all());
+
+        $results = $validated['results'];
         $overallResult = in_array('not_ok', array_values($results)) ? 'fail' : 'pass';
 
-        $prefix = $request->inspection_type === 'pre_work' ? 'TLW' : 'TLI';
-        
-        $inspection = ToolInspection::create([
-            'inspection_no' => $prefix . '-' . date('Ym') . '-' . str_pad(ToolInspection::count() + 1, 4, '0', STR_PAD_LEFT),
-            'tool_id' => $request->tool_id,
-            'inspection_type' => $request->inspection_type,
-            'inspected_by' => auth()->id(),
-            'inspected_at' => now(),
-            'overall_result' => $overallResult,
-            'remark' => $request->remark,
-            'next_inspection_date' => $request->inspection_type === 'monthly' ? now()->addDays(30) : null,
-        ]);
+        $prefix = $validated['inspection_type'] === 'pre_work' ? 'TLW' : 'TLI';
 
-        // Mass insert inspection items
-        $itemsToInsert = [];
-        $now = now();
-        foreach ($results as $code => $result) {
-            $itemsToInsert[] = [
-                'inspection_id' => $inspection->id,
-                'item_code' => $code,
-                'item_name' => collect($request->items)->firstWhere('code', $code)['item'] ?? 'Unknown',
-                'category' => collect($request->items)->firstWhere('code', $code)['category'] ?? 'General',
-                'result' => $result,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }
-        ToolInspectionItem::insert($itemsToInsert);
+        $tool = DB::transaction(function () use ($validated, $results, $checklist, $overallResult, $tool, $prefix) {
+            $inspection = ToolInspection::create([
+                'inspection_no' => $this->generateInspectionNo($prefix),
+                'tool_id' => $validated['tool_id'],
+                'inspection_type' => $validated['inspection_type'],
+                'inspected_by' => auth()->id(),
+                'inspected_at' => now(),
+                'overall_result' => $overallResult,
+                'remark' => $validated['remark'] ?? null,
+                'next_inspection_date' => $validated['inspection_type'] === 'monthly' ? now()->addDays(30) : null,
+            ]);
 
-        // Only update tool's next inspection date if it's a monthly check
-        $tool = Tool::find($request->tool_id);
-        
-        if ($request->inspection_type === 'monthly') {
-            $tool->next_inspection_date = now()->addDays(30);
-        }
-        
-        if ($overallResult === 'fail') {
-            $tool->status = 'under_repair';
-        }
-        $tool->save();
+            $itemsToInsert = [];
+            $now = now();
+            foreach ($results as $code => $result) {
+                $item = $checklist->get($code);
+                $itemsToInsert[] = [
+                    'inspection_id' => $inspection->id,
+                    'item_code' => $code,
+                    'item_name' => $item['item'],
+                    'category' => $item['category'],
+                    'result' => $result,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            ToolInspectionItem::insert($itemsToInsert);
+
+            if ($validated['inspection_type'] === 'monthly') {
+                $tool->next_inspection_date = now()->addDays(30);
+            }
+
+            if ($overallResult === 'fail') {
+                $tool->status = 'under_repair';
+            }
+            $tool->save();
+
+            return $tool;
+        });
 
         return redirect()->route('tools.show', $tool)
             ->with('success', 'บันทึกการตรวจสอบเรียบร้อยแล้ว');

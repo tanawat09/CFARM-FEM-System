@@ -6,6 +6,9 @@ use App\Models\SafetyEquipment;
 use App\Models\EquipmentInspection;
 use App\Models\EquipmentInspectionItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class EquipmentInspectionController extends Controller
 {
@@ -28,6 +31,32 @@ class EquipmentInspectionController extends Controller
             ['code' => 'EW-004', 'category' => 'ความพร้อมเปิดใช้งาน', 'item' => 'น้ำไหลปกติ'],
             ['code' => 'EW-005', 'category' => 'ความพร้อมเปิดใช้งาน', 'item' => 'น้ำแรงดันสม่ำเสมอ และน้ำสะอาดไม่มีตะกอน'],
         ];
+    }
+
+    private function validateResults(array $results, array $allowedCodes): void
+    {
+        $submittedCodes = array_keys($results);
+        sort($submittedCodes);
+        sort($allowedCodes);
+
+        if ($submittedCodes !== $allowedCodes) {
+            throw ValidationException::withMessages([
+                'results' => 'ข้อมูลรายการตรวจไม่ถูกต้อง กรุณาโหลดหน้าแบบฟอร์มใหม่แล้วลองอีกครั้ง',
+            ]);
+        }
+
+        foreach ($results as $code => $result) {
+            if (!in_array($result, ['ok', 'not_ok', 'na'], true)) {
+                throw ValidationException::withMessages([
+                    "results.$code" => 'ค่าผลการตรวจไม่ถูกต้อง',
+                ]);
+            }
+        }
+    }
+
+    private function generateInspectionNo(): string
+    {
+        return 'EQI-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
     }
 
     public function index(Request $request)
@@ -73,13 +102,18 @@ class EquipmentInspectionController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'equipment_id' => 'required|exists:safety_equipments,id',
             'results' => 'required|array',
+            'remark' => 'nullable|string|max:1000',
         ]);
 
+        $equipment = SafetyEquipment::findOrFail($validated['equipment_id']);
+        $checklist = collect($this->getChecklist($equipment->type))->keyBy('code');
+        $this->validateResults($validated['results'], $checklist->keys()->all());
+
         // Prevent duplicate inspection in the same month
-        $alreadyInspected = EquipmentInspection::where('equipment_id', $request->equipment_id)
+        $alreadyInspected = EquipmentInspection::where('equipment_id', $validated['equipment_id'])
             ->whereMonth('inspected_at', now()->month)
             ->whereYear('inspected_at', now()->year)
             ->exists();
@@ -89,43 +123,44 @@ class EquipmentInspectionController extends Controller
                 ->with('error', 'อุปกรณ์นี้ได้รับการตรวจเช็คแล้วในเดือนนี้ ไม่สามารถบันทึกซ้ำได้');
         }
 
-        $results = $request->input('results');
+        $results = $validated['results'];
         $overallResult = in_array('not_ok', array_values($results)) ? 'fail' : 'pass';
 
-        $prefix = 'EQI';
-        $inspection = EquipmentInspection::create([
-            'inspection_no' => $prefix . '-' . date('Ym') . '-' . str_pad(EquipmentInspection::count() + 1, 4, '0', STR_PAD_LEFT),
-            'equipment_id' => $request->equipment_id,
-            'inspected_by' => auth()->id(),
-            'inspected_at' => now(),
-            'overall_result' => $overallResult,
-            'remark' => $request->remark,
-            'next_inspection_date' => now()->addDays(30),
-        ]);
+        $equipment = DB::transaction(function () use ($validated, $results, $checklist, $overallResult, $equipment) {
+            $inspection = EquipmentInspection::create([
+                'inspection_no' => $this->generateInspectionNo(),
+                'equipment_id' => $validated['equipment_id'],
+                'inspected_by' => auth()->id(),
+                'inspected_at' => now(),
+                'overall_result' => $overallResult,
+                'remark' => $validated['remark'] ?? null,
+                'next_inspection_date' => now()->addDays(30),
+            ]);
 
-        // Mass insert inspection items
-        $itemsToInsert = [];
-        $now = now();
-        foreach ($results as $code => $result) {
-            $itemsToInsert[] = [
-                'inspection_id' => $inspection->id,
-                'item_code' => $code,
-                'item_name' => collect($request->items)->firstWhere('code', $code)['item'] ?? 'Unknown',
-                'category' => collect($request->items)->firstWhere('code', $code)['category'] ?? 'General',
-                'result' => $result,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }
-        EquipmentInspectionItem::insert($itemsToInsert);
+            $itemsToInsert = [];
+            $now = now();
+            foreach ($results as $code => $result) {
+                $item = $checklist->get($code);
+                $itemsToInsert[] = [
+                    'inspection_id' => $inspection->id,
+                    'item_code' => $code,
+                    'item_name' => $item['item'],
+                    'category' => $item['category'],
+                    'result' => $result,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            EquipmentInspectionItem::insert($itemsToInsert);
 
-        // Update next inspection date on equipment
-        $equipment = SafetyEquipment::find($request->equipment_id);
-        $equipment->next_inspection_date = now()->addDays(30);
-        if ($overallResult === 'fail') {
-            $equipment->status = 'under_repair';
-        }
-        $equipment->save();
+            $equipment->next_inspection_date = now()->addDays(30);
+            if ($overallResult === 'fail') {
+                $equipment->status = 'under_repair';
+            }
+            $equipment->save();
+
+            return $equipment;
+        });
 
         return redirect()->route('safety-equipment.show', $equipment)
             ->with('success', 'บันทึกการตรวจเช็คเรียบร้อยแล้ว');
