@@ -16,6 +16,8 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $selectedLocation = $request->input('location_name');
+        $expireYears = FireExtinguisher::getConfiguredExpireYears();
+        $warningDaysBefore = FireExtinguisher::getWarningDaysBefore();
 
         $extinguishersQuery = FireExtinguisher::query();
         
@@ -31,12 +33,13 @@ class DashboardController extends Controller
         $disposedExtinguishers = (clone $extinguishersQuery)->where('status', 'disposed')->count();
 
         // แจ้งเตือนถังที่ใกล้จะหมดอายุ
-        $expireSoonCount = (clone $extinguishersQuery)->where('expire_date', '<=', now()->addDays(30))
-            ->where('expire_date', '>=', now())
+        $expireSoonCount = (clone $extinguishersQuery)
+            ->expiringSoonByCurrentSetting($expireYears, $warningDaysBefore)
             ->where('status', '!=', 'disposed')
             ->count();
             
-        $expiredCount = (clone $extinguishersQuery)->where('expire_date', '<', now())
+        $expiredCount = (clone $extinguishersQuery)
+            ->expiredByCurrentSetting($expireYears)
             ->where('status', '!=', 'disposed')
             ->count();
 
