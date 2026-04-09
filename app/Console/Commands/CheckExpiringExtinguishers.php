@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\FireExtinguisher;
 use Illuminate\Console\Command;
 
 class CheckExpiringExtinguishers extends Command
@@ -30,19 +31,18 @@ class CheckExpiringExtinguishers extends Command
         $this->info('Starting extinguisher expiry check...');
 
         $today = \Carbon\Carbon::today();
-        $thirtyDaysFromNow = \Carbon\Carbon::today()->addDays(30);
+        $expireYears = FireExtinguisher::getConfiguredExpireYears();
+        $warningDaysBefore = FireExtinguisher::getWarningDaysBefore();
 
-        // Find extinguishers expiring within 30 days but not yet expired
-        $expiringSoon = \App\Models\FireExtinguisher::with('location')
-            ->where('expire_date', '<=', $thirtyDaysFromNow)
-            ->where('expire_date', '>=', $today)
+        $expiringSoon = FireExtinguisher::with('location')
+            ->expiringSoonByCurrentSetting($expireYears, $warningDaysBefore)
             ->where('status', '!=', 'disposed')
             ->get();
 
         foreach ($expiringSoon as $ext) {
-            $message = "ถังดับเพลิงหมายเลข {$ext->serial_number} ณ " . ($ext->location->location_name ?? '-') . " กำลังจะหมดอายุในวันที่ " . \Carbon\Carbon::parse($ext->expire_date)->translatedFormat('d M Y');
-            
-            // Avoid duplicate notifications for the same extinguisher on the same day
+            $expireDate = $ext->getConfiguredExpireDate($expireYears);
+            $message = "ถังดับเพลิงหมายเลข {$ext->serial_number} ณ " . ($ext->location->location_name ?? '-') . " กำลังจะหมดอายุในวันที่ " . $expireDate?->translatedFormat('d M Y');
+
             $existingLog = \App\Models\NotificationLog::where('title', 'แจ้งเตือนถังใกล้หมดอายุ')
                 ->where('message', $message)
                 ->whereDate('created_at', $today)
@@ -58,15 +58,15 @@ class CheckExpiringExtinguishers extends Command
             }
         }
 
-        // Find extinguishers already expired
-        $expired = \App\Models\FireExtinguisher::with('location')
-            ->where('expire_date', '<', $today)
+        $expired = FireExtinguisher::with('location')
+            ->expiredByCurrentSetting($expireYears)
             ->where('status', '!=', 'disposed')
             ->get();
 
         foreach ($expired as $ext) {
-            $message = "ถังดับเพลิงหมายเลข {$ext->serial_number} ณ " . ($ext->location->location_name ?? '-') . " หมดอายุแล้วเมื่อวันที่ " . \Carbon\Carbon::parse($ext->expire_date)->translatedFormat('d M Y');
-            
+            $expireDate = $ext->getConfiguredExpireDate($expireYears);
+            $message = "ถังดับเพลิงหมายเลข {$ext->serial_number} ณ " . ($ext->location->location_name ?? '-') . " หมดอายุแล้วเมื่อวันที่ " . $expireDate?->translatedFormat('d M Y');
+
             $existingLog = \App\Models\NotificationLog::where('title', 'แจ้งเตือนถังหมดอายุ')
                 ->where('message', $message)
                 ->whereDate('created_at', $today)
@@ -83,6 +83,7 @@ class CheckExpiringExtinguishers extends Command
         }
 
         $this->info('Expiry check completed successfully.');
+
         return Command::SUCCESS;
     }
 }

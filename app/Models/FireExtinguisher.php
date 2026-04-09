@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -70,5 +72,53 @@ class FireExtinguisher extends Model
     public function photos()
     {
         return $this->hasManyThrough(Photo::class, Inspection::class, 'extinguisher_id', 'inspection_id');
+    }
+
+    public static function getConfiguredExpireYears(): int
+    {
+        return max(1, SystemSetting::getInt('expire_years', 5));
+    }
+
+    public static function getWarningDaysBefore(): int
+    {
+        return max(1, SystemSetting::getInt('warning_days_before', 30));
+    }
+
+    public static function expireDateExpression(?int $expireYears = null): string
+    {
+        $expireYears = max(1, (int) ($expireYears ?? static::getConfiguredExpireYears()));
+
+        return "DATE_ADD(manufacture_date, INTERVAL {$expireYears} YEAR)";
+    }
+
+    public function getConfiguredExpireDate(?int $expireYears = null): ?Carbon
+    {
+        if (!$this->manufacture_date) {
+            return $this->expire_date;
+        }
+
+        return $this->manufacture_date->copy()->addYears(
+            max(1, (int) ($expireYears ?? static::getConfiguredExpireYears()))
+        );
+    }
+
+    public function scopeExpiringSoonByCurrentSetting(
+        Builder $query,
+        ?int $expireYears = null,
+        ?int $warningDaysBefore = null
+    ): Builder {
+        $warningDaysBefore = max(1, (int) ($warningDaysBefore ?? static::getWarningDaysBefore()));
+        $expireDateExpression = static::expireDateExpression($expireYears);
+
+        return $query
+            ->whereRaw("{$expireDateExpression} >= CURDATE()")
+            ->whereRaw("{$expireDateExpression} <= DATE_ADD(CURDATE(), INTERVAL {$warningDaysBefore} DAY)");
+    }
+
+    public function scopeExpiredByCurrentSetting(Builder $query, ?int $expireYears = null): Builder
+    {
+        $expireDateExpression = static::expireDateExpression($expireYears);
+
+        return $query->whereRaw("{$expireDateExpression} < CURDATE()");
     }
 }

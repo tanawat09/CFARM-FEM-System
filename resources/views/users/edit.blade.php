@@ -8,21 +8,23 @@
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-person-gear text-primary me-2"></i> แบบฟอร์มอัปเดตข้อมูลผู้ใช้งาน</h5>
-                <span class="badge {{ $user->status == 'active' ? 'bg-success' : 'bg-danger' }} rounded-pill px-3 py-2 fw-normal">{{ $user->status == 'active' ? 'กำลังใช้งาน (Active)' : 'ระงับการใช้งาน (Inactive)' }}</span>
+                <span class="badge {{ $user->status == 'active' ? 'bg-success' : 'bg-danger' }} rounded-pill px-3 py-2 fw-normal">
+                    {{ $user->status == 'active' ? 'กำลังใช้งาน (Active)' : 'ระงับการใช้งาน (Inactive)' }}
+                </span>
             </div>
-            
+
             <div class="card-body p-4 p-md-5">
                 <form action="{{ route('users.update', $user->id) }}" method="POST">
                     @csrf
                     @method('PUT')
-                    
+
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">ชื่อ - นามสกุล <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
                             @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label fw-bold">อีเมล (ใช้สำหรับ Login) <span class="text-danger">*</span></label>
                             <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required>
@@ -34,13 +36,13 @@
                         <small class="text-warning text-dark fw-bold d-block mb-2"><i class="bi bi-info-circle-fill me-1 text-warning"></i> อัปเดตรหัสผ่าน (กรณีลืมรหัสผ่านหรือต้องการเปลี่ยน)</small>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold text-muted small">รหัสผ่านใหม่ (ไม่ต้องกรอกถ้าใช้เดิม)</label>
-                                <input type="password" name="password" class="form-control border-light @error('password') is-invalid @enderror" placeholder="••••••••">
+                                <label class="form-label fw-bold text-muted small">รหัสผ่านใหม่ (ไม่ต้องกรอกถ้าใช้รหัสเดิม)</label>
+                                <input type="password" name="password" class="form-control border-light @error('password') is-invalid @enderror" placeholder="********">
                                 @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold text-muted small">ยืนยันรหัสผ่านใหม่</label>
-                                <input type="password" name="password_confirmation" class="form-control border-light" placeholder="••••••••">
+                                <input type="password" name="password_confirmation" class="form-control border-light" placeholder="********">
                             </div>
                         </div>
                     </div>
@@ -55,7 +57,7 @@
                             </select>
                             @error('role') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
-                        
+
                         <div class="col-md-4">
                             <label class="form-label fw-bold">สถานะบัญชี <span class="text-danger">*</span></label>
                             <select name="status" class="form-select @error('status') is-invalid @enderror" required {{ auth()->id() == $user->id ? 'disabled' : '' }}>
@@ -84,22 +86,21 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between mt-5 border-top pt-4">
-                        <div>
-                            @if(auth()->id() != $user->id)
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้งานท่านนี้อย่างถาวร?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-lg px-4 rounded-pill"><i class="bi bi-trash"></i> ลบบัญชีผู้ใช้</button>
-                                </form>
-                            @endif
-                        </div>
-                        <div>
-                            <a href="{{ route('users.index') }}" class="btn btn-light btn-lg px-4 me-2 rounded-pill">ยกเลิก</a>
-                            <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm"><i class="bi bi-save me-2"></i> บันทึกการเปลี่ยนแปลง</button>
-                        </div>
+                    <div class="d-flex justify-content-end mt-5 border-top pt-4">
+                        <a href="{{ route('users.index') }}" class="btn btn-light btn-lg px-4 me-2 rounded-pill">ยกเลิก</a>
+                        <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm"><i class="bi bi-save me-2"></i> บันทึกการเปลี่ยนแปลง</button>
                     </div>
                 </form>
+
+                @if(auth()->id() != $user->id)
+                    <div class="d-flex justify-content-start mt-3">
+                        <form action="{{ route('users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้งานท่านนี้อย่างถาวร?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger btn-lg px-4 rounded-pill"><i class="bi bi-trash"></i> ลบบัญชีผู้ใช้</button>
+                        </form>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

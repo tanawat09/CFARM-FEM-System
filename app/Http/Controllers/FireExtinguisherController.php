@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FireExtinguisher;
 use App\Models\Location;
 use App\Models\SystemSetting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Str;
@@ -33,9 +34,11 @@ class FireExtinguisherController extends Controller
     public function create()
     {
         $locations = Location::where('is_active', true)->get();
-        $typesSetting = SystemSetting::where('key', 'extinguisher_types')->value('value') ?? 'CO2,Dry_Chemical,Foam,Water,Clean_Agent';
+        $typesSetting = SystemSetting::getValue('extinguisher_types', 'CO2,Dry_Chemical,Foam,Water,Clean_Agent');
         $types = array_filter(array_map('trim', explode(',', $typesSetting)));
-        return view('extinguishers.create', compact('locations', 'types'));
+        $expireYears = FireExtinguisher::getConfiguredExpireYears();
+
+        return view('extinguishers.create', compact('locations', 'types', 'expireYears'));
     }
 
     public function store(Request $request)
@@ -54,11 +57,14 @@ class FireExtinguisherController extends Controller
             'status' => 'required|in:active,damage,disposed,under_repair',
         ]);
 
+        $expireYears = FireExtinguisher::getConfiguredExpireYears();
+        $refillIntervalMonths = SystemSetting::getInt('refill_interval_months', 6);
+
         $validated['asset_code'] = 'FE-' . strtoupper(Str::random(8));
         $validated['qr_code'] = Str::uuid()->toString();
         $validated['created_by'] = auth()->id();
-        $validated['expire_date'] = \Carbon\Carbon::parse($validated['manufacture_date'])->addYears(5);
-        $validated['next_refill_date'] = \Carbon\Carbon::parse($validated['install_date'])->addMonths(6);
+        $validated['expire_date'] = Carbon::parse($validated['manufacture_date'])->addYears($expireYears);
+        $validated['next_refill_date'] = Carbon::parse($validated['install_date'])->addMonths($refillIntervalMonths);
         $validated['model'] = '-'; // set default value instead of empty null
 
         FireExtinguisher::create($validated);
@@ -78,7 +84,7 @@ class FireExtinguisherController extends Controller
     public function edit(FireExtinguisher $extinguisher)
     {
         $locations = Location::where('is_active', true)->get();
-        $typesSetting = SystemSetting::where('key', 'extinguisher_types')->value('value') ?? 'CO2,Dry_Chemical,Foam,Water,Clean_Agent';
+        $typesSetting = SystemSetting::getValue('extinguisher_types', 'CO2,Dry_Chemical,Foam,Water,Clean_Agent');
         $types = array_filter(array_map('trim', explode(',', $typesSetting)));
         return view('extinguishers.edit', compact('extinguisher', 'locations', 'types'));
     }

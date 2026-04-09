@@ -73,7 +73,9 @@ class InspectionController extends Controller
             return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้ถูกจำหน่ายไปแล้ว ไม่สามารถตรวจได้');
         }
 
-        if (\Carbon\Carbon::parse($extinguisher->expire_date)->isBefore(now())) {
+        $configuredExpireDate = $extinguisher->getConfiguredExpireDate();
+
+        if ($configuredExpireDate && $configuredExpireDate->startOfDay()->lt(today())) {
              return redirect()->route('dashboard')->with('error', 'ถังดับเพลิงนี้หมดอายุแล้ว ห้ามตรวจ');
         }
 

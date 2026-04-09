@@ -29,6 +29,15 @@ class Location extends Model
         'gps_lng' => 'decimal:8',
     ];
 
+    public function getFloorPlanImageUrlAttribute(): ?string
+    {
+        if (!$this->floor_plan_image) {
+            return null;
+        }
+
+        return route('storage.locations', ['filename' => basename($this->floor_plan_image)]);
+    }
+
     public function fireExtinguishers()
     {
         return $this->hasMany(FireExtinguisher::class);

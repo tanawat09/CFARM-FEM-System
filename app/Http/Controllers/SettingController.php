@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\FireExtinguisher;
 use App\Models\SystemSetting;
+use Illuminate\Http\Request;
 
 class SettingController extends Controller
 {
     public function index()
     {
         $settings = SystemSetting::all()->pluck('value', 'key');
+
         return view('settings.index', compact('settings'));
     }
 
@@ -30,15 +32,33 @@ class SettingController extends Controller
 
         foreach ($validated as $key => $value) {
             $storeValue = $value ?? '';
-            // Encrypt sensitive values
-            if (in_array($key, $sensitiveKeys) && $storeValue !== '') {
+
+            if (in_array($key, $sensitiveKeys, true) && $storeValue !== '') {
                 $storeValue = encrypt($storeValue);
             }
+
             SystemSetting::updateOrCreate(
                 ['key' => $key],
                 ['value' => $storeValue]
             );
         }
+
+        $expireYears = (int) $validated['expire_years'];
+        $refillIntervalMonths = (int) $validated['refill_interval_months'];
+
+        FireExtinguisher::select(['id', 'manufacture_date', 'install_date'])
+            ->chunkById(200, function ($extinguishers) use ($expireYears, $refillIntervalMonths) {
+                foreach ($extinguishers as $extinguisher) {
+                    $extinguisher->forceFill([
+                        'expire_date' => $extinguisher->manufacture_date
+                            ? $extinguisher->manufacture_date->copy()->addYears($expireYears)
+                            : $extinguisher->expire_date,
+                        'next_refill_date' => $extinguisher->install_date
+                            ? $extinguisher->install_date->copy()->addMonths($refillIntervalMonths)
+                            : $extinguisher->next_refill_date,
+                    ])->saveQuietly();
+                }
+            });
 
         return redirect()->route('settings.index')->with('success', 'บันทึกการตั้งค่าระบบสำเร็จ');
     }
