@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EquipmentInspection;
+use App\Models\Inspection;
+use App\Models\Location;
+use App\Models\ToolInspection;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -9,6 +14,147 @@ class ReportController extends Controller
     public function index()
     {
         return view('reports.index');
+    }
+
+    public function extinguisherDetail(Request $request)
+    {
+        [$monthStart, $monthEnd, $month, $year] = $this->resolveMonthRange($request);
+
+        $query = Inspection::with(['fireExtinguisher.location', 'inspectedBy'])
+            ->whereBetween('inspected_at', [$monthStart, $monthEnd]);
+
+        if ($request->filled('location_id')) {
+            $query->whereHas('fireExtinguisher', function ($q) use ($request) {
+                $q->where('location_id', $request->location_id);
+            });
+        }
+
+        $records = $query->latest('inspected_at')->paginate(20)->appends($request->query());
+
+        return $this->renderInspectionDetailReport(
+            'รายงานรายละเอียดการตรวจเช็คถังดับเพลิง',
+            $records,
+            $month,
+            $year,
+            $request->input('location_id'),
+            function ($record) {
+                return [
+                    'inspection_no' => $record->inspection_no,
+                    'asset_label' => $record->fireExtinguisher->serial_number ?? '-',
+                    'location_label' => $record->fireExtinguisher->location->location_name ?? 'ไม่ระบุ',
+                    'inspector' => $record->inspectedBy->name ?? 'ไม่ระบุ',
+                    'inspected_at' => $record->inspected_at,
+                    'result' => $record->overall_result,
+                ];
+            }
+        );
+    }
+
+    public function eyewashDetail(Request $request)
+    {
+        [$monthStart, $monthEnd, $month, $year] = $this->resolveMonthRange($request);
+
+        $query = EquipmentInspection::with(['equipment.location', 'inspectedBy'])
+            ->whereBetween('inspected_at', [$monthStart, $monthEnd])
+            ->whereHas('equipment', function ($q) {
+                $q->where('type', 'eyewash_shower');
+            });
+
+        if ($request->filled('location_id')) {
+            $query->whereHas('equipment', function ($q) use ($request) {
+                $q->where('type', 'eyewash_shower')
+                    ->where('location_id', $request->location_id);
+            });
+        }
+
+        $records = $query->latest('inspected_at')->paginate(20)->appends($request->query());
+
+        return $this->renderInspectionDetailReport(
+            'รายงานรายละเอียดการตรวจเช็คที่ล้างตา / ฝักบัวล้างตา',
+            $records,
+            $month,
+            $year,
+            $request->input('location_id'),
+            function ($record) {
+                return [
+                    'inspection_no' => $record->inspection_no,
+                    'asset_label' => $record->equipment->asset_code ?? '-',
+                    'location_label' => $record->equipment->location->location_name ?? 'ไม่ระบุ',
+                    'inspector' => $record->inspectedBy->name ?? 'ไม่ระบุ',
+                    'inspected_at' => $record->inspected_at,
+                    'result' => $record->overall_result,
+                ];
+            }
+        );
+    }
+
+    public function toolsDetail(Request $request)
+    {
+        [$monthStart, $monthEnd, $month, $year] = $this->resolveMonthRange($request);
+
+        $query = ToolInspection::with(['tool.location', 'inspectedBy'])
+            ->whereBetween('inspected_at', [$monthStart, $monthEnd]);
+
+        if ($request->filled('location_id')) {
+            $query->whereHas('tool', function ($q) use ($request) {
+                $q->where('location_id', $request->location_id);
+            });
+        }
+
+        $records = $query->latest('inspected_at')->paginate(20)->appends($request->query());
+
+        return $this->renderInspectionDetailReport(
+            'รายงานรายละเอียดการตรวจเช็คเครื่องมือช่าง',
+            $records,
+            $month,
+            $year,
+            $request->input('location_id'),
+            function ($record) {
+                return [
+                    'inspection_no' => $record->inspection_no,
+                    'asset_label' => $record->tool->tool_code ?? ($record->tool->tool_name ?? '-'),
+                    'location_label' => $record->tool->location->location_name ?? 'ไม่ระบุ',
+                    'inspector' => $record->inspectedBy->name ?? 'ไม่ระบุ',
+                    'inspected_at' => $record->inspected_at,
+                    'result' => $record->overall_result,
+                ];
+            }
+        );
+    }
+
+    private function renderInspectionDetailReport(
+        string $title,
+        $records,
+        int $month,
+        int $year,
+        $selectedLocationId,
+        callable $rowResolver
+    ) {
+        return view('reports.inspection-detail', [
+            'title' => $title,
+            'subtitle' => 'เลขที่ใบตรวจ อุปกรณ์ / พื้นที่ ผู้ตรวจ วันเวลา และผลลัพธ์',
+            'records' => $records,
+            'month' => $month,
+            'year' => $year,
+            'monthLabel' => Carbon::create($year, $month, 1)->locale('th')->translatedFormat('F') . ' ' . ($year + 543),
+            'locations' => Location::where('is_active', true)->orderBy('location_name')->get(),
+            'selectedLocationId' => $selectedLocationId,
+            'rowResolver' => $rowResolver,
+        ]);
+    }
+
+    private function resolveMonthRange(Request $request): array
+    {
+        $month = (int) $request->input('month', date('m'));
+        $year = (int) $request->input('year', date('Y'));
+
+        $month = $month >= 1 && $month <= 12 ? $month : (int) date('m');
+        $year = $year >= 2000 ? $year : (int) date('Y');
+
+        $monthStart = Carbon::create($year, $month, 1, 0, 0, 0, config('app.timezone'))->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
+        return [$monthStart, $monthEnd, $month, $year];
     }
 
     public function equipmentMonthly(Request $request)

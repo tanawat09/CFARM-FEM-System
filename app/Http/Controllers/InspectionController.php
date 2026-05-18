@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Inspection;
 use App\Models\FireExtinguisher;
 use App\Models\InspectionItem;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -52,6 +53,17 @@ class InspectionController extends Controller
     public function index(Request $request)
     {
         $query = Inspection::with(['fireExtinguisher.location', 'inspectedBy']);
+        $selectedMonth = $request->input('month', now()->format('Y-m'));
+        try {
+            $monthDate = Carbon::createFromFormat('Y-m', $selectedMonth, config('app.timezone'))->startOfMonth();
+        } catch (\Throwable $e) {
+            $selectedMonth = now()->format('Y-m');
+            $monthDate = now()->startOfMonth();
+        }
+        $monthStart = $monthDate->copy()->startOfMonth();
+        $monthEnd = $monthDate->copy()->endOfMonth();
+
+        $query->whereBetween('inspected_at', [$monthStart, $monthEnd]);
 
         if ($request->has('location_id') && $request->location_id != '') {
             $query->whereHas('fireExtinguisher', function ($q) use ($request) {
@@ -61,8 +73,31 @@ class InspectionController extends Controller
 
         $inspections = $query->latest('inspected_at')->paginate(15);
         $locations = \App\Models\Location::where('is_active', true)->get();
+        $summaryQuery = Inspection::query()->whereBetween('inspected_at', [$monthStart, $monthEnd]);
 
-        return view('inspections.index', compact('inspections', 'locations'));
+        if ($request->has('location_id') && $request->location_id != '') {
+            $summaryQuery->whereHas('fireExtinguisher', function ($q) use ($request) {
+                $q->where('location_id', $request->location_id);
+            });
+        }
+
+        $summary = [
+            'total' => (clone $summaryQuery)->count(),
+            'passed' => (clone $summaryQuery)->where('overall_result', 'pass')->count(),
+            'failed' => (clone $summaryQuery)->whereIn('overall_result', ['fail', 'Fail', 'FAIL'])->count(),
+        ];
+        $summary['pass_rate'] = $summary['total'] > 0
+            ? round(($summary['passed'] / $summary['total']) * 100, 2)
+            : 0;
+        $selectedMonthLabel = $monthDate->locale('th')->translatedFormat('F') . ' ' . ($monthDate->year + 543);
+
+        return view('inspections.index', compact(
+            'inspections',
+            'locations',
+            'summary',
+            'selectedMonth',
+            'selectedMonthLabel'
+        ));
     }
 
     public function scanQr($qr_code)

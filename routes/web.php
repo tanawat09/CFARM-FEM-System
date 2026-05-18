@@ -130,6 +130,9 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
+        Route::get('reports/extinguisher-detail', [ReportController::class, 'extinguisherDetail'])->name('reports.extinguisher-detail');
+        Route::get('reports/eyewash-detail', [ReportController::class, 'eyewashDetail'])->name('reports.eyewash-detail');
+        Route::get('reports/tools-detail', [ReportController::class, 'toolsDetail'])->name('reports.tools-detail');
         Route::get('reports/equipment-monthly', [ReportController::class, 'equipmentMonthly'])->name('reports.equipment-monthly');
         Route::get('reports/equipment-annual', [ReportController::class, 'equipmentAnnual'])->name('reports.equipment-annual');
         Route::get('reports/tools-monthly', [ReportController::class, 'toolsMonthly'])->name('reports.tools-monthly');
