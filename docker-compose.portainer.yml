@@ -1,0 +1,73 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cfarm-fem-app:v2
+    container_name: fem_app
+    restart: unless-stopped
+    working_dir: /var/www
+    environment:
+      APP_NAME: "${APP_NAME:-CFARM FEM System}"
+      APP_ENV: "${APP_ENV:-production}"
+      APP_KEY: "${APP_KEY:-}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      APP_URL: "${APP_URL:-http://localhost:8019}"
+      LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+      DB_CONNECTION: "${DB_CONNECTION:-mysql}"
+      DB_HOST: "${DB_HOST:-127.0.0.1}"
+      DB_PORT: "${DB_PORT:-3306}"
+      DB_DATABASE: "${DB_DATABASE:-fire_extinguisher_db}"
+      DB_USERNAME: "${DB_USERNAME:-root}"
+      DB_PASSWORD: "${DB_PASSWORD:-}"
+    volumes:
+      - fem_storage:/var/www/storage
+    networks:
+      - fem_network
+
+  webserver:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    image: cfarm-fem-webserver:v2
+    container_name: fem_webserver
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8019}:80"
+    networks:
+      - fem_network
+    depends_on:
+      - app
+
+  scheduler:
+    image: cfarm-fem-app:v2
+    container_name: fem_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan schedule:work
+    environment:
+      APP_NAME: "${APP_NAME:-CFARM FEM System}"
+      APP_ENV: "${APP_ENV:-production}"
+      APP_KEY: "${APP_KEY:-}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      APP_URL: "${APP_URL:-http://localhost:8019}"
+      LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+      DB_CONNECTION: "${DB_CONNECTION:-mysql}"
+      DB_HOST: "${DB_HOST:-127.0.0.1}"
+      DB_PORT: "${DB_PORT:-3306}"
+      DB_DATABASE: "${DB_DATABASE:-fire_extinguisher_db}"
+      DB_USERNAME: "${DB_USERNAME:-root}"
+      DB_PASSWORD: "${DB_PASSWORD:-}"
+    volumes:
+      - fem_storage:/var/www/storage
+    networks:
+      - fem_network
+    depends_on:
+      - app
+
+networks:
+  fem_network:
+    driver: bridge
+
+volumes:
+  fem_storage:

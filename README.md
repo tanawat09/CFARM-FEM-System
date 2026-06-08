@@ -278,6 +278,63 @@ docker-compose exec app php artisan optimize:clear
 http://localhost:8019
 ```
 
+### Portainer Stack Deployment
+
+สำหรับการ Deploy ผ่าน Portainer ให้ใช้ไฟล์ `docker-compose.portainer.yml` แทน `docker-compose.yml` เพราะไฟล์นี้ออกแบบให้ใช้กับ Portainer โดยเฉพาะ และใช้ Docker named volume สำหรับเก็บไฟล์อัปโหลดให้คงอยู่หลังจาก rebuild container
+
+ตั้งค่าใน Portainer ดังนี้
+
+1. ไปที่ `Stacks` แล้วเลือก `Add stack`
+2. เลือกวิธี `Repository`
+3. ใส่ Repository URL:
+
+```text
+https://github.com/tanawat09/CFARM-FEM-System.git
+```
+
+4. ใส่ Branch:
+
+```text
+main
+```
+
+5. ใส่ Compose path:
+
+```text
+docker-compose.portainer.yml
+```
+
+6. หาก Repository เป็น Public ให้ปิด `Authentication` ไม่ต้องใส่ username หรือ password
+7. หาก Repository เป็น Private ให้ใช้ GitHub username และ Personal Access Token แทน password
+
+ตัวอย่าง Environment variables สำหรับ Portainer
+
+```env
+APP_NAME=CFARM FEM System
+APP_ENV=production
+APP_KEY=base64:your_app_key_here
+APP_DEBUG=false
+APP_URL=http://192.168.7.3:8019
+APP_PORT=8019
+
+DB_CONNECTION=mysql
+DB_HOST=192.168.7.3
+DB_PORT=3308
+DB_DATABASE=fire_extinguisher_db
+DB_USERNAME=itadmin
+DB_PASSWORD=your_database_password
+```
+
+หลัง Deploy ครั้งแรก ให้เข้า Console ของ container `fem_app` แล้วรันคำสั่งเตรียมระบบ
+
+```bash
+php artisan key:generate --force
+php artisan migrate --seed --force
+php artisan optimize:clear
+```
+
+หากเจอ error `Invalid username` ใน Portainer แปลว่าส่วน Git authentication ไม่ผ่าน ให้ปิด `Authentication` สำหรับ repository public หรือใช้ GitHub Personal Access Token สำหรับ repository private
+
 หมายเหตุ: หาก `docker-compose.yml` ถูกตั้งค่าให้เชื่อมต่อฐานข้อมูลภายนอก ให้ตรวจสอบค่า `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` และ `DB_PASSWORD` ให้ตรงกับเครื่องแม่ข่ายจริง
 
 ### ติดตั้งแบบ Local Development
