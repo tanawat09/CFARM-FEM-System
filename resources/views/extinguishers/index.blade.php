@@ -2,6 +2,26 @@
 
 @section('page_title', 'รายการถังดับเพลิง')
 
+@section('styles')
+<style>
+    .extinguisher-pagination .pagination {
+        margin-bottom: 0;
+        justify-content: flex-end;
+    }
+
+    .extinguisher-pagination .page-link {
+        font-size: 0.875rem;
+        line-height: 1.25;
+        padding: 0.35rem 0.65rem;
+    }
+
+    .extinguisher-pagination svg {
+        width: 1rem;
+        height: 1rem;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white pt-3 pb-3 d-flex justify-content-between align-items-center">
@@ -136,8 +156,8 @@
     </div>
     
     @if(isset($extinguishers) && $extinguishers->lastPage() > 1)
-    <div class="card-footer bg-white pt-3 pb-1">
-        {{ $extinguishers->links() }}
+    <div class="card-footer bg-white py-2 extinguisher-pagination">
+        {{ $extinguishers->appends(request()->query())->links('pagination::bootstrap-5') }}
     </div>
     @endif
 </div>
