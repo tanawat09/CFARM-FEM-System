@@ -23,7 +23,7 @@ services:
       DB_USERNAME: "${DB_USERNAME:-root}"
       DB_PASSWORD: "${DB_PASSWORD:-}"
     volumes:
-      - ./storage:/var/www/storage
+      - fem_storage:/var/www/storage
     networks:
       - fem_network
 
@@ -36,8 +36,6 @@ services:
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8019}:80"
-    volumes:
-      - ./storage/app/public:/var/www/public/storage
     networks:
       - fem_network
     depends_on:
@@ -63,7 +61,7 @@ services:
       DB_USERNAME: "${DB_USERNAME:-root}"
       DB_PASSWORD: "${DB_PASSWORD:-}"
     volumes:
-      - ./storage:/var/www/storage
+      - fem_storage:/var/www/storage
     networks:
       - fem_network
     depends_on:
@@ -72,3 +70,6 @@ services:
 networks:
   fem_network:
     driver: bridge
+
+volumes:
+  fem_storage:
