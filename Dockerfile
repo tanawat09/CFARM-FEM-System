@@ -35,7 +35,9 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-d
 # IMPORTANT: Ensure storage and cache folders have write permissions
 RUN chown -R www-data:www-data /var/www
 RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+RUN chmod +x /var/www/docker/entrypoint.sh
 
 # Expose port 9000 and start php-fpm server
 EXPOSE 9000
+ENTRYPOINT ["/var/www/docker/entrypoint.sh"]
 CMD ["php-fpm"]
